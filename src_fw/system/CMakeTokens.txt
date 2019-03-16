@@ -1,0 +1,15 @@
+set(SRC_SYSTEM
+	${PROJECT_SOURCE_DIR}/src_fw/system/constants.h
+	
+	${PROJECT_SOURCE_DIR}/src_fw/system/platform.h
+	${PROJECT_SOURCE_DIR}/src_fw/system/platform.cpp
+	
+	${PROJECT_SOURCE_DIR}/src_fw/system/log.h
+	${PROJECT_SOURCE_DIR}/src_fw/system/log.cpp
+	
+	${PROJECT_SOURCE_DIR}/src_fw/system/filesystem.h
+	${PROJECT_SOURCE_DIR}/src_fw/system/filesystem.cpp
+
+	${PROJECT_SOURCE_DIR}/src_fw/system/timer.h
+	${PROJECT_SOURCE_DIR}/src_fw/system/timer.cpp
+)

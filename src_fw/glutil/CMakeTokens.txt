@@ -1,0 +1,18 @@
+set(SRC_GLUTIL
+	${SRC_GLUTIL}
+	
+	${PROJECT_SOURCE_DIR}/src_fw/glutil/glbase.h
+	${PROJECT_SOURCE_DIR}/src_fw/glutil/glbase.cpp
+	
+	${PROJECT_SOURCE_DIR}/src_fw/glutil/glmesh.h
+	${PROJECT_SOURCE_DIR}/src_fw/glutil/glmesh.cpp
+	
+	${PROJECT_SOURCE_DIR}/src_fw/glutil/glmesh_soa.h
+	${PROJECT_SOURCE_DIR}/src_fw/glutil/glmesh_soa.cpp
+	
+	${PROJECT_SOURCE_DIR}/src_fw/glutil/glframebuffer.h
+	${PROJECT_SOURCE_DIR}/src_fw/glutil/glframebuffer.cpp
+	
+	${PROJECT_SOURCE_DIR}/src_fw/glutil/glprogram.h
+	${PROJECT_SOURCE_DIR}/src_fw/glutil/glprogram.cpp
+)

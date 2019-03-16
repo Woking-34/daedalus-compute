@@ -1,0 +1,19 @@
+cmake_minimum_required(VERSION 2.8.11)
+cmake_policy(VERSION 2.8.11)
+
+project(glew)
+
+SET(SRC_GLEW
+	glew.c
+)
+
+ADD_DEFINITIONS(-DGLEW_NO_GLU)
+ADD_DEFINITIONS(-DGLEW_STATIC)
+
+if(CMAKE_COMPILER_IS_GNUCC)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -fno-common -fPIC -Wall")
+endif()
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_LIST_DIR})
+ADD_LIBRARY( glew STATIC ${SRC_GLEW} )
+SET_PROPERTY(TARGET glew PROPERTY FOLDER "_library")

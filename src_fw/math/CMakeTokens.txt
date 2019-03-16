@@ -1,0 +1,37 @@
+set(SRC_MATH_BASE
+	${SRC_MATH_CORE}
+
+	${PROJECT_SOURCE_DIR}/src_fw/math/mathbase.h
+)
+
+set(SRC_MATH_CORE
+	${SRC_MATH_CORE}
+
+	${PROJECT_SOURCE_DIR}/src_fw/math/core/vec.h
+	${PROJECT_SOURCE_DIR}/src_fw/math/core/mat.h
+	${PROJECT_SOURCE_DIR}/src_fw/math/core/quat.h
+)
+
+set(SRC_MATH_UTIL
+	${SRC_MATH_UTIL}
+
+	${PROJECT_SOURCE_DIR}/src_fw/math/util/ray.h
+	${PROJECT_SOURCE_DIR}/src_fw/math/util/aabb.h
+	${PROJECT_SOURCE_DIR}/src_fw/math/util/obb.h
+	${PROJECT_SOURCE_DIR}/src_fw/math/util/sphere.h
+	${PROJECT_SOURCE_DIR}/src_fw/math/util/frustum.h
+	${PROJECT_SOURCE_DIR}/src_fw/math/util/camera.h
+	${PROJECT_SOURCE_DIR}/src_fw/math/util/triangle.h
+	${PROJECT_SOURCE_DIR}/src_fw/math/util/quadrilateral.h
+	
+	${PROJECT_SOURCE_DIR}/src_fw/math/util/intersect.h
+	${PROJECT_SOURCE_DIR}/src_fw/math/util/intersect.cpp
+)
+
+set(SRC_MATH
+	${SRC_MATH}
+
+	${SRC_MATH_CORE}
+	${SRC_MATH_BASE}
+	${SRC_MATH_UTIL}	
+)

@@ -1,0 +1,1 @@
+ADD_GLUTPROJECT(comp_deform_cu "${SRC_COMPCU_DEFORM}" "COMPCU")

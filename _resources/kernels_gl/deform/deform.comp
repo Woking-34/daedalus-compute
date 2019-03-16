@@ -1,0 +1,105 @@
+uniform int currDeform;
+uniform float currTime;
+
+uniform float gridWidth;
+uniform float gridWidthDt;
+uniform float gridLength;
+uniform float gridLengthDt;
+
+layout (local_size_x = WGSX, local_size_y = WGSY, local_size_z = WGSZ) in;
+layout (std430, binding=0) buffer _destBuffer
+{
+	vec4 gridVerts[];
+};
+
+const float wave_a[2] = float[2]( 0.4, 0.4 );
+const float wave_k[2] = float[2]( 1.5, 1.5 );
+const float wave_w[2] = float[2]( 0.01, 0.01 );
+const float wave_p[2] = float[2]( 1.0, 1.0 );
+const vec4 wave_dir = vec4( 1.0, 0.0, -1.0, 0.0);
+
+vec4 generatePosition(float idX, float idY)
+{
+	vec4 ret;
+	
+	float x = idX * gridWidthDt - gridWidth * 0.5f;
+	float y = 0.0f;
+	float z = idY * gridLengthDt - gridLength * 0.5f;
+	
+	// Directional
+	if(currDeform == 0)
+	{
+		float dist = dot( wave_dir, vec4(x, y, z, 0.0) );
+		for(int i = 0; i < 2; i++)
+		{
+			y += wave_a[i] * sin(wave_k[i]*dist - currTime*wave_w[i] + wave_p[i]);
+		}
+	}
+	
+	// Circular
+	if(currDeform == 1)
+	{
+		float dist = sqrt(x*x + z*z);
+		for(int i = 0; i < 2; i++)
+		{
+			y += wave_a[i] * sin(wave_k[i]*dist - currTime*wave_w[i] + wave_p[i]);
+		}
+	}
+	
+	// SinCos
+	if(currDeform == 2)
+	{
+		y = cos(z + - 0.5 * currTime*wave_w[0]) + 0.5 * sin(x + 2.0 * z - 0.5 * currTime*wave_w[1]);
+	}
+	
+	ret.x = x;
+	ret.y = y;
+	ret.z = z;
+	ret.w = 1.0;
+	
+	return ret;
+}
+
+void main()
+{
+	uint idX = gl_GlobalInvocationID.x;
+	uint idY = gl_GlobalInvocationID.y;
+	
+	uint sizeX = gl_WorkGroupSize.x * gl_NumWorkGroups.x;
+	//uint sizeY = gl_WorkGroupSize.y * gl_NumWorkGroups.y;
+	//uint size = gWidth * gHeight;
+	
+	float idXF = float(idX);
+	float idYF = float(idY);
+	
+	vec4 pos = generatePosition(idXF, idYF);
+	
+	vec4 normal;
+	
+	{
+		vec4 left = generatePosition(idXF-gridWidth, idYF);
+		vec4 right = generatePosition(idXF+gridWidth, idYF);
+		vec4 bottom = generatePosition(idXF, idYF-gridLengthDt);
+		vec4 top = generatePosition(idXF, idYF+gridLengthDt);
+		
+		vec4 tangentX = right - left;
+		
+		if (dot(tangentX, tangentX) < 1e-10)
+			tangentX = vec4(1.0, 0.0, 0.0, 0.0);
+		else
+			tangentX = normalize(tangentX);
+		
+		vec4 tangentY = bottom - top;
+		
+		if (dot(tangentY, tangentY) < 1e-10)
+			tangentY = vec4(0.0, 1.0, 0.0, 0.0);
+		else
+			tangentY = normalize(tangentY);
+		
+		normal = vec4(cross(tangentX.xyz, tangentY.xyz), 0.0);
+		//normal = abs(normal);
+	}
+	
+	gridVerts[2 * (idY * sizeX + idX) + 0] = pos;
+	gridVerts[2 * (idY * sizeX + idX) + 1] = normal;
+}

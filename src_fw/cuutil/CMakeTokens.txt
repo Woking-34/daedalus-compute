@@ -1,0 +1,5 @@
+set(SRC_CUUTIL
+	${SRC_CUUTIL}
+	
+	${PROJECT_SOURCE_DIR}/src_fw/cuutil/cubase.h
+)

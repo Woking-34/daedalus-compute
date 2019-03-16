@@ -1,0 +1,6 @@
+set(SRC_APPFW
+	${PROJECT_SOURCE_DIR}/src_fw/appfw/main.cpp
+	
+	${PROJECT_SOURCE_DIR}/src_fw/appfw/GLUTApplication.h
+	${PROJECT_SOURCE_DIR}/src_fw/appfw/GLUTApplication.cpp
+)

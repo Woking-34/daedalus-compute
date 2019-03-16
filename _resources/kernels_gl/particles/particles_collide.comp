@@ -1,0 +1,110 @@
+#ifndef M_PI_F
+    #define M_PI_F 3.14159265358979323846
+#endif
+
+#define spring				 0.5f
+#define damping				 0.02f
+#define shear				 0.1f
+#define attraction			 0.0f
+#define boundaryDamping		 -1.0f
+#define globalDamping		 1.0f
+#define gravity				-0.03f
+#define deltaTime			 0.01f
+
+uniform float particleRadius;
+uniform int gridSize;
+
+layout (local_size_x = WGSX, local_size_y = WGSY, local_size_z = WGSZ) in;
+layout (std430, binding=0) buffer _hListBuffer
+{
+         int hList[];
+};
+layout (std430, binding=1) buffer _pListBuffer
+{
+         int pList[];
+};
+layout (std430, binding=2) buffer _posBuffer
+{
+         vec4 allocPos[];
+};
+layout (std430, binding=3) buffer _velBuffer0
+{
+         vec4 allocVel0[];
+};
+layout (std430, binding=4) buffer _velBuffer1
+{
+         vec4 allocVel1[];
+};
+
+void collideSpheres(vec4 posA, vec4 posB, vec4 velA, vec4 velB, float radiusA, float radiusB, inout vec4 force)
+{
+	vec4 relPos = posB - posA;
+	float dist = length(relPos);
+	float collideDist = radiusA + radiusB;
+	
+	if(dist < collideDist)
+	{
+		vec4 norm = normalize(relPos);
+		vec4 relVel = velB - velA;
+		vec4 tanVel = relVel - norm * dot(norm, relVel);
+		
+		force -= norm * spring * (collideDist-dist);
+		force += relVel * damping;
+		force += tanVel * shear;
+		force += relPos * attraction;
+	}
+}
+
+void main()
+{
+	int idX = int(gl_GlobalInvocationID.x);
+	
+	vec4 pos = allocPos[idX];
+	vec4 vel = allocVel0[idX];
+	vec4 force = vec4(0.0, 0.0, 0.0, 0.0);
+	
+	int xId = int(pos.x / (2.0*particleRadius));
+	int yId = int(pos.y / (2.0*particleRadius));
+	int zId = int(pos.z / (2.0*particleRadius));
+	
+	int xIdMin = max(xId-1, 0);
+	int yIdMin = max(yId-1, 0);
+	int zIdMin = max(zId-1, 0);
+	
+	int xIdMax = min(xId+1, gridSize-1);
+	int yIdMax = min(yId+1, gridSize-1);
+	int zIdMax = min(zId+1, gridSize-1);
+	
+	for(int k = zIdMin; k <= zIdMax; ++k)
+	{
+		for(int j = yIdMin; j <= yIdMax; ++j)
+		{
+			for(int i = xIdMin; i <= xIdMax; ++i)
+			{
+				int gridId = k * gridSize*gridSize + j * gridSize + i;
+				
+				int listId = hList[gridId];
+				
+				while(listId != -1)
+				{
+					int listIdNew = pList[listId];
+					
+					if(idX == listId)
+					{
+						listId = listIdNew;
+						continue;
+					}
+					
+					vec4 pos2 = allocPos[listId];
+					vec4 vel2 = allocVel0[listId];
+					
+					collideSpheres(pos, pos2, vel, vel2, particleRadius, particleRadius, force);
+					
+					listId = listIdNew;
+				}
+			}
+		}
+	}
+	
+	allocVel1[idX] =  vel + force;
+}

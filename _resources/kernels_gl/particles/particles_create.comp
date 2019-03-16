@@ -1,0 +1,41 @@
+uniform float particleRadius;
+uniform int gridSize;
+
+layout (local_size_x = WGSX, local_size_y = WGSY, local_size_z = WGSZ) in;
+layout (std430, binding=0) buffer _hListBuffer
+{
+         int hList[];
+};
+layout (std430, binding=1) buffer _pListBuffer
+{
+         int pList[];
+};
+layout (std430, binding=2) buffer _posBuffer
+{
+         vec4 allocPos[];
+};
+
+void main()
+{
+    const uint idX = gl_GlobalInvocationID.x;
+	
+	vec4 pos = allocPos[idX];
+
+	int xId = int(pos.x / (2.0f*particleRadius));
+	xId = max(xId, 0);
+	xId = min(xId, gridSize-1);
+	
+	int yId = int(pos.y / (2.0f*particleRadius));
+	yId = max(yId, 0);
+	yId = min(yId, gridSize-1);
+	
+	int zId = int(pos.z / (2.0f*particleRadius));
+	zId = max(zId, 0);
+	zId = min(zId, gridSize-1);
+	
+	int gridId = zId * gridSize*gridSize + yId * gridSize + xId;
+
+	int listId = atomicExchange( hList[gridId], int(idX) );
+
+	pList[idX] = listId;
+}

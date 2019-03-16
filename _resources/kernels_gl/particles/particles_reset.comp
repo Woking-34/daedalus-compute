@@ -1,0 +1,12 @@
+layout (local_size_x = WGSX, local_size_y = WGSY, local_size_z = WGSZ) in;
+layout (std430, binding=0) buffer _hListBuffer
+{
+         int hList[];
+};
+
+void main()
+{
+    const uint idX = gl_GlobalInvocationID.x;
+
+	hList[idX] = -1;
+}

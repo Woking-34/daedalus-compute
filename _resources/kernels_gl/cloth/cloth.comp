@@ -1,0 +1,262 @@
+#define KSSTRUCT 50.75
+#define KDSTRUCT -0.25
+#define KSSHEAR 50.75
+#define KDSHEAR -0.25
+#define KSBEND 50.95
+#define KDBEND -0.25
+
+const float KsStruct = KSSTRUCT;
+const float KdStruct = KDSTRUCT;
+const float KsShear = KSSHEAR;
+const float KdShear = KDSHEAR;
+const float KsBend = KSBEND;
+const float KdBend = KDBEND;
+
+const float springStiffnes[12] = float[12]
+(
+	KSSTRUCT,
+	KSSTRUCT,
+	KSSTRUCT,
+	KSSTRUCT,
+	KSSHEAR,
+	KSSHEAR,
+	KSSHEAR,
+	KSSHEAR,
+	KSBEND,
+	KSBEND,
+	KSBEND,
+	KSBEND
+);
+
+const float springDamping[12] = float[12]
+(
+	KDSTRUCT,
+	KDSTRUCT,
+	KDSTRUCT,
+	KDSTRUCT,
+	KDSHEAR,
+	KDSHEAR,
+	KDSHEAR,
+	KDSHEAR,
+	KDBEND,
+	KDBEND,
+	KDBEND,
+	KDBEND
+);
+
+const int springCoord[2*12] = int[2*12]
+(
+	 1, 0,
+	 0,-1,
+	-1, 0,
+	 0, 1,
+	 1,-1,
+	-1,-1,
+	-1, 1,
+	 1, 1,
+	 2, 0,
+	 0,-2,
+	-2, 0,
+	 0, 2
+);
+
+/*
+//structural springs (adjacent neighbors)
+//        o
+//        |
+//     o--m--o
+//        |
+//        o
+
+//shear springs (diagonal neighbors)
+//     o  o  o
+//      \   /
+//     o  m  o
+//      /   \
+//     o  o  o
+
+//bend spring (adjacent neighbors 1 node away)
+//
+//o   o   o   o   o
+//        | 
+//o   o   |   o   o
+//        |   
+//o-------m-------o
+//        |  
+//o   o   |   o   o
+//        |
+//o   o   o   o   o
+*/
+
+void getSpringCoord(int k, out int x, out int y)
+{
+	x = springCoord[k * 2 + 0];
+	y = springCoord[k * 2 + 1];
+}
+
+void getSpringCoeff(int k, out float ks, out float kd)
+{
+	ks = springStiffnes[k];
+	kd = springDamping[k];
+}
+
+uniform float damp;
+uniform float dt;
+uniform float stepX;
+uniform float stepY;
+
+layout (local_size_x = WGSX, local_size_y = WGSY, local_size_z = WGSZ) in;
+
+layout (std430, binding=0) buffer _g_pos_in
+{
+		vec4 g_pos_in[];
+};
+layout (std430, binding=1) buffer _g_pos_old_in
+{
+		vec4 g_pos_old_in[];
+};
+layout (std430, binding=2) buffer _g_pos_out
+{
+		vec4 g_pos_out[];
+};
+layout (std430, binding=3) buffer _g_pos_old_out
+{
+		vec4 g_pos_old_out[];
+};
+layout (std430, binding=4) buffer _g_normals_out
+{
+		vec4 g_normals_out[];
+};
+layout (std430, binding=5) buffer _g_mass_in
+{
+		float g_mass_in[];
+};
+
+void main()
+{
+	int idX = int(gl_GlobalInvocationID.x);
+	int idY = int(gl_GlobalInvocationID.y);
+	
+	int sizeX = int(gl_WorkGroupSize.x) * int(gl_NumWorkGroups.x);
+	int sizeY = int(gl_WorkGroupSize.y) * int(gl_NumWorkGroups.y);
+	
+	int index = (idY * sizeX) + idX;
+	
+	float mass = g_mass_in[index];
+	
+	vec4 pos = g_pos_in[index];
+	vec4 pos_old = g_pos_old_in[index];
+	vec4 vel = (pos - pos_old) / dt;
+	
+	const vec4 gravity = vec4(0.0,-0.00981,0.0,0.0); 
+	vec4 force = gravity*mass + vel*damp;
+	
+	float ks, kd;
+	int x, y;
+	
+	for (int k = 0; k < 12; ++k)
+	{
+		getSpringCoord(k, x, y);
+		getSpringCoeff(k, ks, kd);
+		
+		if (((idX + x) < 0) || ((idX + x) > (sizeX - 1)))
+			continue;
+		
+		if (((idY + y) < 0) || ((idY + y) > (sizeY - 1)))
+			continue;
+		
+		int index_neigh = (idY + y) * sizeX + (idX + x);
+		
+		float rest_length = length(vec2(float(x) * stepX, float(y) * stepY));
+		
+		vec4 pos2 = g_pos_in[index_neigh];
+		vec4 pos2_old = g_pos_old_in[index_neigh];
+		vec4 vel2 = (pos2- pos2_old) / dt;
+		
+		vec4 deltaP = pos - pos2;
+		vec4 deltaV = vel - vel2;
+		float dist = length(deltaP);
+		
+		float leftTerm = -ks * (dist-rest_length);
+		float rightTerm = kd * (dot(deltaV, deltaP)/dist);		
+		vec4 springForce = (leftTerm + rightTerm)*normalize(deltaP);
+		force += springForce;
+	}
+	
+	vec4 normal;
+	
+	{
+		int index_neigh_left = (idY) * sizeX + max((idX - 1), 0);
+		int index_neigh_right = (idY) * sizeX + min((idX + 1), sizeX-1);
+		int index_neigh_bottom = max((idY - 1), 0) * sizeX + (idX);
+		int index_neigh_top = min((idY + 1), sizeY-1) * sizeX + (idX);
+		
+		vec4 left = g_pos_in[index_neigh_left];
+		vec4 right = g_pos_in[index_neigh_right];
+		vec4 bottom = g_pos_in[index_neigh_bottom];
+		vec4 top = g_pos_in[index_neigh_top];
+		
+		vec4 tangentX = right - left;
+		
+		if (dot(tangentX, tangentX) < 1e-10)
+			tangentX = vec4(1.0, 0.0, 0.0, 0.0);
+		else
+			tangentX = normalize(tangentX);
+		
+		vec4 tangentZ = bottom - top;
+		
+		if (dot(tangentZ, tangentZ) < 1e-10)
+			tangentZ = vec4(0.0, 0.0, 1.0, 0.0);
+		else
+			tangentZ = normalize(tangentZ);
+		
+		normal = vec4(cross(tangentX.xyz, tangentZ.xyz),0.0);
+	}
+	
+	vec4 acc = vec4(0.0, 0.0, 0.0, 0.0);
+	if(mass!=0.0f)
+		acc = force / mass;
+	
+	// verlet
+	vec4 tmp = pos; 
+	pos = pos * 2.0f - pos_old + acc * dt * dt;
+	pos_old = tmp;
+	
+	float cf = 0.75;
+	vec4 d = pos - pos_old;
+	vec4 rt = vec4(0.0, 0.0, 0.0, 0.0);
+	
+	// y-up world plane
+	{
+		if (pos.y < 0.0f)
+		{
+			// collision
+			vec4 coll_dir = vec4(0.0, 1.0, 0.0, 0.0);
+			pos.y = 0.0f;
+			
+			vec4 dt = d - coll_dir * dot(d, coll_dir);
+			rt += -cf*dt;
+		}
+	}
+	
+	// sphere
+	{
+		vec4 center = vec4(0.0, 2.0, 0.0, 1.0);
+		float radius = 1.75;
+		
+		if (length(pos - center) < radius)
+		{
+			// collision
+			vec4 coll_dir = normalize(pos - center);
+			pos = center + coll_dir * radius;
+			
+			vec4 dt = d - coll_dir * dot(d, coll_dir);
+			rt += -cf*dt;
+		}
+	}
+	
+	g_pos_out[index] = pos + rt;
+	g_pos_old_out[index] = pos_old;
+	
+	g_normals_out[index] = normalize(normal);
+}

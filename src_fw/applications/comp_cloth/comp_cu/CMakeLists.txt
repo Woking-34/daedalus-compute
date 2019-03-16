@@ -1,0 +1,1 @@
+ADD_GLUTPROJECT(comp_cloth_cu "${SRC_COMPCU_CLOTH}" "COMPCU")

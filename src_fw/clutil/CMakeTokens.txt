@@ -1,0 +1,6 @@
+set(SRC_CLUTIL
+	${SRC_CLUTIL}
+	
+	${PROJECT_SOURCE_DIR}/src_fw/clutil/clbase.h
+	${PROJECT_SOURCE_DIR}/src_fw/clutil/clbase.cpp
+)

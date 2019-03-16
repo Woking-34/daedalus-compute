@@ -1,0 +1,1 @@
+ADD_GLUTPROJECT(comp_particles_cl "${SRC_COMPCL_PARTICLES}" "COMPCL")

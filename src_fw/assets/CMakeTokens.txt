@@ -1,0 +1,12 @@
+set(SRC_ASSETS
+	${SRC_ASSETS}
+	
+	${PROJECT_SOURCE_DIR}/src_fw/assets/meshfile.h
+	${PROJECT_SOURCE_DIR}/src_fw/assets/meshfile.cpp
+	
+	${PROJECT_SOURCE_DIR}/src_fw/assets/imagedata.h
+	${PROJECT_SOURCE_DIR}/src_fw/assets/imagedata.cpp
+	
+	${PROJECT_SOURCE_DIR}/src_fw/assets/volumedata.h
+	#${PROJECT_SOURCE_DIR}/src_fw/assets/volumedata.cpp
+)

@@ -1,0 +1,83 @@
+#ifndef M_PI_F
+    #define M_PI_F 3.14159265358979323846
+#endif
+
+#define spring				 0.5f
+#define damping				 0.02f
+#define shear				 0.1f
+#define attraction			 0.0f
+#define boundaryDamping		 -1.0f
+#define globalDamping		 1.0f
+#define gravity				-0.03f
+#define deltaTime			 0.01f
+
+uniform float particleRadius;
+
+layout (local_size_x = WGSX, local_size_y = WGSY, local_size_z = WGSZ) in;
+layout (std430, binding=2) buffer _posBuffer
+{
+         vec4 allocPos[];
+};
+layout (std430, binding=3) buffer _velBuffer0
+{
+         vec4 allocVel0[];
+};
+layout (std430, binding=4) buffer _velBuffer1
+{
+         vec4 allocVel1[];
+};
+
+void main()
+{
+    const uint idX = gl_GlobalInvocationID.x;
+	
+	vec4 pos = allocPos[idX];
+	vec4 vel = allocVel1[idX];
+		
+	vec4 g = vec4(0.0f, gravity, 0.0f, 0.0f);
+		
+	vel += g * deltaTime;
+
+	vel *= globalDamping;
+
+	pos += vel * deltaTime;
+
+	if(pos.x < particleRadius)
+	{
+		pos.x = particleRadius;
+		vel.x *= boundaryDamping;
+	}
+
+	if(pos.x > 1.0f - particleRadius)
+	{
+		pos.x = 1.0f - particleRadius;
+		vel.x *= boundaryDamping;
+	}
+
+	if(pos.y < particleRadius)
+	{
+		pos.y = particleRadius;
+		vel.y *= boundaryDamping;
+	}
+
+	if(pos.y > 1.0f - particleRadius)
+	{
+		pos.y = 1.0f - particleRadius;
+		vel.y *= boundaryDamping;
+	}
+
+	if(pos.z < particleRadius)
+	{
+		pos.z = particleRadius;
+		vel.z *= boundaryDamping;
+	}
+
+	if(pos.z > 1.0f - particleRadius)
+	{
+		pos.z = 1.0f - particleRadius;
+		vel.z *= boundaryDamping;
+	}
+	
+	allocPos[idX] = pos;
+	allocVel0[idX] = vel;
+}
