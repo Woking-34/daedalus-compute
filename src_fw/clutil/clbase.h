@@ -6,12 +6,6 @@
 
 #include "system/log.h"
 
-class CLKernel;
-class CLProgram;
-class CLMemory;
-
-class CLScan_UINT;
-
 #define CHECK_CL(clStatus) if(clStatus != CL_SUCCESS) { LOG_ERR( LogLine() << "File: " << __FILE__ << " " << "Line: " << __LINE__ << " " << "OpenCL error: " << openclGetErrorString(clStatus) ); }
 std::string openclGetErrorString(cl_int clStatus);
 
