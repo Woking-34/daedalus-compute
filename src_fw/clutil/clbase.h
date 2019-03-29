@@ -185,6 +185,10 @@ public:
 		{
 			cl_device_id interopDeviceID;
 			clStatus = clGetGLContextInfoKHR(&clContextPropsInterop[0], CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR, sizeof(cl_device_id), &interopDeviceID, NULL);
+
+			if(clStatus == CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR)
+				return;
+
 			CHECK_CL(clStatus);
 
 			isCurrentGLDevice = (interopDeviceID == deviceID);
@@ -408,7 +412,9 @@ public:
 	void print()
 	{
 		printPlatform();
+		std::cout << std::endl;
 		printDevice();
+		std::cout << std::endl;
 	}
 
 	bool isCL11()
