@@ -235,6 +235,8 @@ void App::Initialize()
 	mainCamera.setProjParams(60.0f, (float)(currWidth) / (float)(currHeight), 0.25f, 100.0f);
 	mainCamera.updateRays();
 
+	appCamera = &mainCamera;
+
 	// init gl state
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -291,59 +293,6 @@ void App::Initialize()
 
 void App::Update()
 {
-	float translationScale = 0.0015f * delta_time;
-	float rotationScale = 0.0015f;
-
-	if (isSHIFTPressed)
-	{
-		translationScale *= 10.0f;
-	}
-
-	if (normalKeyState['w'] || normalKeyState['W'])
-	{
-		mainCamera.updateTranslationForwardBackward(-translationScale);
-	}
-
-	if (normalKeyState['s'] || normalKeyState['S'])
-	{
-		mainCamera.updateTranslationForwardBackward(translationScale);
-	}
-
-	if (normalKeyState['a'] || normalKeyState['A'])
-	{
-		mainCamera.updateTranslationLeftRight(-translationScale);
-	}
-
-	if (normalKeyState['d'] || normalKeyState['D'])
-	{
-		mainCamera.updateTranslationLeftRight(translationScale);
-	}
-
-	if (normalKeyState['q'] || normalKeyState['Q'])
-	{
-		mainCamera.updateTranslationUpDown(-translationScale);
-	}
-
-	if (normalKeyState['e'] || normalKeyState['E'])
-	{
-		mainCamera.updateTranslationUpDown(translationScale);
-	}
-
-	if (mouseState[GLUT_LEFT_BUTTON])
-	{
-		if (mouseX_old != -1 && mouseY_old != -1)
-		{
-			mainCamera.updateRotation(rotationScale * (mouseX - mouseX_old), rotationScale * (mouseY - mouseY_old), 0.0f);
-		}
-
-		mouseX_old = mouseX;
-		mouseY_old = mouseY;
-	}
-	else
-	{
-		mouseX_old = -1;
-		mouseY_old = -1;
-	}
 }
 
 void App::Render()

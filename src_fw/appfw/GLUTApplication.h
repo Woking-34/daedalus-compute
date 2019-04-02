@@ -30,6 +30,7 @@ public:
 protected:
 	int glutWindowHandle;
 	int frameCounter;
+	bool isFullscreen;
 
 	std::map<std::string, int> rawi;
 	std::map<std::string, uint> rawui;
@@ -61,10 +62,9 @@ protected:
 	float translationScale, rotationScale;
 	
 	bool normalKeyState[256], specialKeyState[256], mouseState[3];
-	bool isSHIFTPressed, isALTPressed;
+	bool isENTERPressed, isSHIFTPressed, isALTPressed;
 	int mouseX, mouseY, mouseX_old, mouseY_old;
 
-	int currIter;
 	int prev_time, curr_time, delta_time;
 
 	std::string glVendor;

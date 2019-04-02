@@ -13,15 +13,16 @@ GLUTApplication::GLUTApplication()
 
 	glutWindowHandle = 0;
 	frameCounter = 0;
+	isFullscreen = false;
 
 	memset( normalKeyState, 0, sizeof( normalKeyState ) );
 	memset( specialKeyState, 0, sizeof( specialKeyState ) );
 	memset( mouseState, 0, sizeof( mouseState ) );
 
+	isENTERPressed = false;
 	isSHIFTPressed = false;
 	isALTPressed = false;
 
-	currIter = 0;
 	prev_time = curr_time = delta_time = 0;
 	mouseX = mouseY = 0;
 	mouseX_old = mouseY_old = 0;
@@ -221,6 +222,16 @@ void GLUTApplication::OnIdle()
 	curr_time = glutGet(GLUT_ELAPSED_TIME);
 	delta_time = curr_time - prev_time;
 
+	if (isALTPressed && isENTERPressed)
+	{
+		glutFullScreenToggle();
+		isFullscreen = !isFullscreen;
+
+		isENTERPressed = false;
+
+		LOG( LogLine() << "Window resolution: " << glutGet(GLUT_WINDOW_WIDTH) << " x " << glutGet(GLUT_WINDOW_HEIGHT) )
+	}
+
 	if(specialKeyState[GLUT_KEY_INSERT])
 	{
 		specialKeyState[GLUT_KEY_INSERT] = false;
@@ -301,7 +312,6 @@ void GLUTApplication::OnIdle()
 void GLUTApplication::OnDisplay()
 {
 	++frameCounter;
-	++currIter;
 
 	Render();
 	
@@ -355,6 +365,10 @@ void GLUTApplication::ProcessNormalKeysPress(unsigned char key, int x, int y)
 	{
 		key += 32;
 	}
+	if (key == 13)
+	{
+		isENTERPressed = true;
+	}
 
 	normalKeyState[key] = true;
 
@@ -367,9 +381,13 @@ void GLUTApplication::ProcessNormalKeysPress(unsigned char key, int x, int y)
 
 void GLUTApplication::ProcessNormalKeysRelease(unsigned char key, int x, int y)
 {
-	if( key >= 'A' && key <= 'Z')
+	if (key >= 'A' && key <= 'Z')
 	{
 		key += 32;
+	}
+	if (key == 13)
+	{
+		isENTERPressed = false;
 	}
 
 	normalKeyState[key] = false;
@@ -386,6 +404,10 @@ void GLUTApplication::ProcessSpecialKeysPress(int key, int x, int y)
 	{
 		isSHIFTPressed = true;
 	}
+	if (key == 116)
+	{
+		isALTPressed = true;
+	}
 
 	specialKeyState[key] = true;
 }
@@ -400,6 +422,10 @@ void GLUTApplication::ProcessSpecialKeysRelease(int key, int x, int y)
 	if( key == 112 )
 	{
 		isSHIFTPressed = false;
+	}
+	if (key == 116)
+	{
+		isALTPressed = false;
 	}
 
 	specialKeyState[key] = false;

@@ -149,9 +149,13 @@ void App::Initialize()
 	// init gl state
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
+	appCamera = &mainCamera;
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+
+	LOG(LogLine() << "Press F1-F3 to switch between different scenes!\n");
 
 	CHECK_GL;
 
@@ -216,60 +220,6 @@ void App::Update()
 	{
 		specialKeyState[GLUT_KEY_F3] = false;
 		deformMode = 2;
-	}
-
-	float translationScale = 0.0015f * delta_time;
-	float rotationScale = 0.0015f;
-
-	if (isSHIFTPressed)
-	{
-		translationScale *= 10.0f;
-	}
-
-	if (normalKeyState['w'] || normalKeyState['W'])
-	{
-		mainCamera.updateTranslationForwardBackward(-translationScale);
-	}
-
-	if (normalKeyState['s'] || normalKeyState['S'])
-	{
-		mainCamera.updateTranslationForwardBackward(translationScale);
-	}
-
-	if (normalKeyState['a'] || normalKeyState['A'])
-	{
-		mainCamera.updateTranslationLeftRight(-translationScale);
-	}
-
-	if (normalKeyState['d'] || normalKeyState['D'])
-	{
-		mainCamera.updateTranslationLeftRight(translationScale);
-	}
-
-	if (normalKeyState['q'] || normalKeyState['Q'])
-	{
-		mainCamera.updateTranslationUpDown(-translationScale);
-	}
-
-	if (normalKeyState['e'] || normalKeyState['E'])
-	{
-		mainCamera.updateTranslationUpDown(translationScale);
-	}
-
-	if (mouseState[GLUT_LEFT_BUTTON])
-	{
-		if (mouseX_old != -1 && mouseY_old != -1)
-		{
-			mainCamera.updateRotation(rotationScale * (mouseX - mouseX_old), rotationScale * (mouseY - mouseY_old), 0.0f);
-		}
-
-		mouseX_old = mouseX;
-		mouseY_old = mouseY;
-	}
-	else
-	{
-		mouseX_old = -1;
-		mouseY_old = -1;
 	}
 }
 
