@@ -164,6 +164,51 @@ void GLUTApplication::PrintGlinfo()
 	LOG( tabulateStrings("GLEW_VERSION:", glewVersion) );
 }
 
+bool GLUTApplication::SetSwapInterval(int interval)
+{
+#ifdef BUILD_WINDOWS
+	// https://stackoverflow.com/questions/589064/how-to-enable-vertical-sync-in-opengl/589232
+	// This is pointer to function which returns pointer to string with list of all wgl extensions
+	PFNWGLGETEXTENSIONSSTRINGEXTPROC _wglGetExtensionsStringEXT = NULL;
+
+	// Determine pointer to wglGetExtensionsStringEXT function
+	_wglGetExtensionsStringEXT = (PFNWGLGETEXTENSIONSSTRINGEXTPROC)wglGetProcAddress("wglGetExtensionsStringEXT");
+
+	if (strstr(_wglGetExtensionsStringEXT(), "WGL_EXT_swap_control") != NULL)
+	{
+		PFNWGLSWAPINTERVALEXTPROC       wglSwapIntervalEXT;
+		PFNWGLGETSWAPINTERVALEXTPROC    wglGetSwapIntervalEXT;
+
+		// Extension is supported, init pointers.
+		wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+		wglGetSwapIntervalEXT = (PFNWGLGETSWAPINTERVALEXTPROC)wglGetProcAddress("wglGetSwapIntervalEXT");
+
+		wglSwapIntervalEXT(interval);
+
+		return true;
+	}
+#endif
+
+//#ifdef BUILD_UNIX
+//	// http://ludobloom.com/svn/StemLibProjects/glutshell/trunk/source/glutshell/GLUTShell.c
+//	const char * extensions = glXQueryExtensionsString(glXGetCurrentDisplay(), 0);
+//	if (strstr(extensions, "GLX_EXT_swap_control")) {
+//		PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddress((const GLubyte *) "glXSwapIntervalEXT");
+//		glXSwapIntervalEXT(glXGetCurrentDisplay(), glXGetCurrentDrawable(), sync);
+//
+//		return true;
+//	}
+//	else if (strstr(extensions, "GLX_SGI_swap_control")) {
+//		PFNGLXSWAPINTERVALSGIPROC glxSwapIntervalSGI = (PFNGLXSWAPINTERVALSGIPROC)glXGetProcAddress((const GLubyte *) "glXSwapIntervalSGI");
+//		glxSwapIntervalSGI(interval);
+//
+//		return true;
+//	}
+//#endif
+
+	return false;
+}
+
 void GLUTApplication::InitGL(int argc, char** argv)
 {
 	FileSystem::Init();
@@ -174,6 +219,8 @@ void GLUTApplication::InitGL(int argc, char** argv)
 	LOG("");
 	PrintGlinfo();
 	LOG("");
+
+	SetSwapInterval(0);
 
 	return;
 

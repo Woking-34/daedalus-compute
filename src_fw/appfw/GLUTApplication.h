@@ -93,6 +93,8 @@ protected:
 	void InitGlew();
 	void PrintGlinfo();
 
+	bool SetSwapInterval(int interval);
+
 	virtual void OnIdle();
 	virtual void OnDisplay();
 	virtual void OnReshape(int w, int h);

@@ -8,6 +8,7 @@
     #include <GLUT/glut.h>
 #else
 	#include <GL/glew.h>
+	#include <GL/wglew.h>
 	#include <GL/freeglut.h>
 
 	#if defined(BUILD_UNIX)
