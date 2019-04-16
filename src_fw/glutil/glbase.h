@@ -5,12 +5,14 @@
 
 #if defined(BUILD_APPLE)
 	#include <OpenGL/gl.h>
-    #include <GLUT/glut.h>
+	#include <GLUT/glut.h>
 #else
 	#include <GL/glew.h>
-	#include <GL/wglew.h>
 	#include <GL/freeglut.h>
 
+	#if defined(BUILD_WINDOWS)
+		#include <GL/wglew.h>
+	#endif
 	#if defined(BUILD_UNIX)
 		#include <GL/glx.h>
 	#endif

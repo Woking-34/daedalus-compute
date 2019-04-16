@@ -189,22 +189,22 @@ bool GLUTApplication::SetSwapInterval(int interval)
 	}
 #endif
 
-//#ifdef BUILD_UNIX
-//	// http://ludobloom.com/svn/StemLibProjects/glutshell/trunk/source/glutshell/GLUTShell.c
-//	const char * extensions = glXQueryExtensionsString(glXGetCurrentDisplay(), 0);
-//	if (strstr(extensions, "GLX_EXT_swap_control")) {
-//		PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddress((const GLubyte *) "glXSwapIntervalEXT");
-//		glXSwapIntervalEXT(glXGetCurrentDisplay(), glXGetCurrentDrawable(), sync);
-//
-//		return true;
-//	}
-//	else if (strstr(extensions, "GLX_SGI_swap_control")) {
-//		PFNGLXSWAPINTERVALSGIPROC glxSwapIntervalSGI = (PFNGLXSWAPINTERVALSGIPROC)glXGetProcAddress((const GLubyte *) "glXSwapIntervalSGI");
-//		glxSwapIntervalSGI(interval);
-//
-//		return true;
-//	}
-//#endif
+#ifdef BUILD_UNIX
+	// http://ludobloom.com/svn/StemLibProjects/glutshell/trunk/source/glutshell/GLUTShell.c
+	const char * extensions = glXQueryExtensionsString(glXGetCurrentDisplay(), 0);
+	if (strstr(extensions, "GLX_EXT_swap_control")) {
+		PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddress((const GLubyte *) "glXSwapIntervalEXT");
+		glXSwapIntervalEXT(glXGetCurrentDisplay(), glXGetCurrentDrawable(), interval);
+
+		return true;
+	}
+	else if (strstr(extensions, "GLX_SGI_swap_control")) {
+		PFNGLXSWAPINTERVALSGIPROC glxSwapIntervalSGI = (PFNGLXSWAPINTERVALSGIPROC)glXGetProcAddress((const GLubyte *) "glXSwapIntervalSGI");
+		glxSwapIntervalSGI(interval);
+
+		return true;
+	}
+#endif
 
 	return false;
 }
