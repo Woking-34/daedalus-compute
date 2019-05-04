@@ -4,7 +4,7 @@ Tiny collection of compute demos, no wrapper around the compute APIs, tested on 
 ## Features
  - ”proof of concept” demos
  - supports OpenGL, OpenCL, CUDA compute shaders/kernels
- - visualization with OpenGL (vbo interop)
+ - visualization with OpenGL (vbo/tex interop)
 
 ## Mesh Deform
 <p align="center"><img src="docs/compute_deform.jpg" width="800" /></p>
@@ -14,6 +14,9 @@ Tiny collection of compute demos, no wrapper around the compute APIs, tested on 
 
 ## Particle Simulation
 <p align="center"><img src="docs/compute_particles.jpg" width="800" /></p>
+
+## Ray Tracing in One Weekend by Peter Shirley
+<p align="center"><img src="docs/compute_rtow.jpg" width="800" /></p>
 
 ## OpenCL platform and deivce info for Intel i7-6770HQ  + Iris Pro Graphics 580
 ```
@@ -126,9 +129,16 @@ comp_particles_gl.exe
 ...
 ```
 
+## Todos
+ - fix CUDA texture interop fallback path
+ - fix rtow OpenCL vc CUDA perf diff
+
+
 ## References
  - [NVIDIA OpenCL SDK - OpenCL Simple OpenGL Interop](https://developer.nvidia.com/opencl)
  - [NVIDIA OpenCL SDK - OpenCL Particle Collision Simulation](https://developer.nvidia.com/opencl)
  - [MMMovania - OpenCloth](https://github.com/mmmovania/opencloth)
  - [Marco Fratarcangeli - GPGPU Cloth simulation using GLSL, OpenCL and CUDA](http://www.cse.chalmers.se/~marcof/publication/geg2011/)
  - [RenderMonkey GLSL velvet shader](https://gpuopen.com/archive/gamescgi/rendermonkey-toolsuite/)
+ - [petershirley - raytracinginoneweekend](https://github.com/petershirley/raytracinginoneweekend)
+ - [rogerallen - raytracinginoneweekendincuda](https://github.com/rogerallen/raytracinginoneweekendincuda)

@@ -1,11 +1,12 @@
-cmake_minimum_required(VERSION 2.8.11)
-cmake_policy(VERSION 2.8.11)
-
+cmake_minimum_required(VERSION 2.6)
 project(Daedalus-Compute)
 
 set( CMAKE_VERBOSE_MAKEFILE ON )
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "_cmake")
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/daedalus-bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/daedalus-lib)
 
 IF(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
@@ -105,6 +106,7 @@ include( ./src_fw/glutil/CMakeTokens.txt )
 include( ./src_fw/clutil/CMakeTokens.txt )
 include( ./src_fw/cuutil/CMakeTokens.txt )
 
+ADD_SUBDIRECTORY( ./src_fw/applications/comp_rtow )
 ADD_SUBDIRECTORY( ./src_fw/applications/comp_deform )
 ADD_SUBDIRECTORY( ./src_fw/applications/comp_cloth )
 ADD_SUBDIRECTORY( ./src_fw/applications/comp_particles )
@@ -113,4 +115,4 @@ ADD_SUBDIRECTORY( ./src_fw/applications/compute_info )
 
 #ADD_SUBDIRECTORY( ./src_fw/applications/gl_mesh_seq )
 #ADD_SUBDIRECTORY( ./src_fw/applications/gl_mesh_data )
-#ADD_SUBDIRECTORY( ./src_fw/applications/gl_volume_viz 
+#ADD_SUBDIRECTORY( ./src_fw/applications/gl_volume_viz )

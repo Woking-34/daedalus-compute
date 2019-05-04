@@ -1,0 +1,1 @@
+ADD_GLUTPROJECT(comp_rtow_cu "${SRC_COMPCU_RTOW}" "COMPCU")
