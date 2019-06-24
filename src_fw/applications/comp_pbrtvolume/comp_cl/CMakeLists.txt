@@ -1,0 +1,1 @@
+ADD_GLUTPROJECT(comp_pbrtvolume_cl "${SRC_COMPCL_PBRTVOLUME}" "COMPCL")
