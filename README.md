@@ -18,6 +18,9 @@ Tiny collection of compute demos, no wrapper around the compute APIs, tested on 
 ## Ray Tracing in One Weekend by Peter Shirley
 <p align="center"><img src="docs/compute_rtow.jpg" width="800" /></p>
 
+## PBRT ray-marching volume rendering, with single scattering lighting model
+<p align="center"><img src="docs/comp_pbrtvolume.jpg" width="800" /></p>
+
 ## OpenCL platform and deivce info for Intel i7-6770HQ  + Iris Pro Graphics 580
 ```
 PLATFORM #0
@@ -133,7 +136,6 @@ comp_particles_gl.exe
  - fix CUDA texture interop fallback path
  - fix rtow OpenCL vc CUDA perf diff
 
-
 ## References
  - [NVIDIA OpenCL SDK - OpenCL Simple OpenGL Interop](https://developer.nvidia.com/opencl)
  - [NVIDIA OpenCL SDK - OpenCL Particle Collision Simulation](https://developer.nvidia.com/opencl)
@@ -142,3 +144,4 @@ comp_particles_gl.exe
  - [RenderMonkey GLSL velvet shader](https://gpuopen.com/archive/gamescgi/rendermonkey-toolsuite/)
  - [petershirley - raytracinginoneweekend](https://github.com/petershirley/raytracinginoneweekend)
  - [rogerallen - raytracinginoneweekendincuda](https://github.com/rogerallen/raytracinginoneweekendincuda)
+ - [ISPC examples - volume_rendering](https://github.com/ispc/ispc/tree/master/examples/volume_rendering)

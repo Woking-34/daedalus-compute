@@ -17,8 +17,6 @@ COMPCL_PBRTVOLUME::COMPCL_PBRTVOLUME()
 	clMImage = 0;
 	clMCamera = 0;
 	clMVolumeData = 0;
-	clMRaster2Camera = 0;
-	clMCamera2World = 0;
 }
 
 COMPCL_PBRTVOLUME::~COMPCL_PBRTVOLUME()
@@ -120,11 +118,8 @@ void COMPCL_PBRTVOLUME::init()
 
 	clMCamera = clCreateBuffer(clContext, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 8*4 * sizeof(float), cameraArray, &clStatus);
 	CHECK_CL(clStatus);
+
 	clMVolumeData = clCreateBuffer(clContext, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, vX*vY*vZ * sizeof(float), volumeData, &clStatus);
-	CHECK_CL(clStatus);
-	clMRaster2Camera = clCreateBuffer(clContext, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 16 * sizeof(float), raster2camera, &clStatus);
-	CHECK_CL(clStatus);
-	clMCamera2World = clCreateBuffer(clContext, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 16 * sizeof(float), camera2world, &clStatus);
 	CHECK_CL(clStatus);
 
 	clStatus = clFinish( clQueue );
@@ -149,18 +144,6 @@ void COMPCL_PBRTVOLUME::terminate()
 	{
 		CHECK_CL( clReleaseMemObject(clMVolumeData) );
 		clMVolumeData = 0;
-	}
-
-	if(clMRaster2Camera)
-	{
-		CHECK_CL( clReleaseMemObject(clMRaster2Camera) );
-		clMRaster2Camera = 0;
-	}
-
-	if (clMCamera2World)
-	{
-		CHECK_CL(clReleaseMemObject(clMCamera2World));
-		clMCamera2World = 0;
 	}
 	
 	if(clK_render)
@@ -206,8 +189,8 @@ void COMPCL_PBRTVOLUME::compute()
 
 	{
 		size_t globalWS[3] = { launchW, launchH, 1 };
-		//size_t localWS[3] = { wgsX, wgsY, 1 };
-		size_t* localWS = NULL;
+		size_t localWS[3] = { wgsX, wgsY, 1 };
+		//size_t* localWS = NULL;
 
 		cl_int3 nVoxels;
 		nVoxels.s[0] = vX;
@@ -218,9 +201,8 @@ void COMPCL_PBRTVOLUME::compute()
 		clStatus |= clSetKernelArg(clK_render, 1, sizeof(cl_int),  (void*)&launchH);
 		clStatus |= clSetKernelArg(clK_render, 2, sizeof(cl_int3), (void*)&nVoxels);
 		clStatus |= clSetKernelArg(clK_render, 3, sizeof(cl_mem),  (void*)&clMVolumeData);
-		clStatus |= clSetKernelArg(clK_render, 4, sizeof(cl_mem),  (void*)&clMRaster2Camera);
-		clStatus |= clSetKernelArg(clK_render, 5, sizeof(cl_mem),  (void*)&clMCamera2World);
-		clStatus |= clSetKernelArg(clK_render, 6, sizeof(cl_mem),  (void*)&clMImage);
+		clStatus |= clSetKernelArg(clK_render, 4, sizeof(cl_mem),  (void*)&clMCamera);
+		clStatus |= clSetKernelArg(clK_render, 5, sizeof(cl_mem),  (void*)&clMImage);
 		CHECK_CL(clStatus);
 
 		clStatus = clEnqueueNDRangeKernel(clQueue, clK_render, 2, NULL, globalWS, localWS, 0, NULL, NULL);
@@ -246,6 +228,4 @@ void COMPCL_PBRTVOLUME::download()
 	
 	clStatus = clEnqueueReadImage(clQueue, clMImage, CL_TRUE, origin, region, 0, 0, outputFLT, 0 , nullptr, nullptr);
 	CHECK_CL(clStatus);
-
-	//savePPM("comp_pbrtvolume_cl", outputFLT, launchW, launchH, 4);
 }

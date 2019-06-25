@@ -78,7 +78,7 @@ App::App()
 {
 	isDynamicCamera = false;
 
-	useInterop = false;
+	useInterop = true;
 
 	useCLGDevice = true;
 	useCLPId = -1;
@@ -92,8 +92,8 @@ App::App()
 	texId = 0;
 
 	{
-		launchW = 0;
-		launchH = 0;
+		launchW = 720;
+		launchH = 1280;
 
 		wgsX = 8;
 		wgsY = 8;
@@ -138,18 +138,16 @@ void App::PrintCommandLineHelp()
 
 void App::initScene()
 {
-	loadCamera(FileSystem::GetRawFolder() + "pbrtvolume/camera.dat", launchW, launchH, raster2camera.data(), camera2world.data());
+	int dummyW, dummyH;
+	loadCamera(FileSystem::GetRawFolder() + "pbrtvolume/camera.dat", dummyW, dummyH, raster2camera.data(), camera2world.data());
 	volumeData = loadVolume(FileSystem::GetRawFolder() + "pbrtvolume/density_highres.vol", vX, vY, vZ);
-
-	currWidth = launchW;
-	currHeight = launchH;
 }
 
 void App::initCamera()
 {
 	// final camera params
-	Vec4f lookfrom = Vec4f(13.0f, 2.0f, 3.0f, 1.0f);
-	Vec4f lookat = Vec4f(0.0f, 0.0f, 0.0f, 1.0f);
+	Vec4f lookfrom = Vec4f(1.5f * 0.6f, 2.5f * 0.3f, 6.0f, 1.0f);
+	Vec4f lookat = lookfrom + Vec4f(0.0f, 0.0f, -10.0f, 0.0f);
 	Vec4f vup = Vec4f(0.0f, 1.0f, 0.0f, 0.0f);
 	
 	if (isDynamicCamera)
@@ -187,7 +185,7 @@ void App::updateCameraArray()
 	}
 
 	float aspect = (float)(launchW) / (float)(launchH);
-	float dist_to_focus = 10.0f;
+	float dist_to_focus = 1.0f;
 	float aperture = 0.1f;
 	lens_radius = aperture / 2.0f;
 
@@ -288,6 +286,7 @@ void App::Initialize()
 	outputFLT = new float[4*launchW*launchH];
 
 	// init gl state
+	//glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 	glEnable(GL_DEPTH_TEST);

@@ -107,6 +107,8 @@ include( ./src_fw/clutil/CMakeTokens.txt )
 include( ./src_fw/cuutil/CMakeTokens.txt )
 
 ADD_SUBDIRECTORY( ./src_fw/applications/comp_rtow )
+ADD_SUBDIRECTORY( ./src_fw/applications/comp_pbrtvolume )
+
 ADD_SUBDIRECTORY( ./src_fw/applications/comp_deform )
 ADD_SUBDIRECTORY( ./src_fw/applications/comp_cloth )
 ADD_SUBDIRECTORY( ./src_fw/applications/comp_particles )

@@ -35,8 +35,6 @@ public:
 	cl_mem clMImage;
 	cl_mem clMCamera;
 	cl_mem clMVolumeData;
-	cl_mem clMRaster2Camera;
-	cl_mem clMCamera2World;
 };
 
 #endif

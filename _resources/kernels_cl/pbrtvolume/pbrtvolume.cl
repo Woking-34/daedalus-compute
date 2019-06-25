@@ -4,29 +4,29 @@ typedef struct
 	float3 dir;
 } Ray;
 
+typedef struct
+{
+	float4 camera_origin;
+	float4 camera_lower_left_corner;
+	float4 camera_horizontal;
+	float4 camera_vertical;
+	float4 camera_u;
+	float4 camera_v;
+	float4 camera_w;
+	
+	float lens_radius;
+	float pad0, pad1, pad2;
+} Camera;
+
 static inline void
-generateRay(
-	__global const float* restrict raster2camera,
-	__global const float* restrict camera2world,
-	float x, float y, Ray* ray
+generateRay
+(
+	const Camera* cam,
+	float s, float t, Ray* ray
 )
 {
-    // transform raster coordinate (x, y, 0) to camera space
-    float camx = raster2camera[4*0+0] * x + raster2camera[4*0+1] * y + raster2camera[4*0+3];
-    float camy = raster2camera[4*1+0] * x + raster2camera[4*1+1] * y + raster2camera[4*1+3];
-    float camz = raster2camera[4*2+3];
-    float camw = raster2camera[4*3+3];
-    camx /= camw;
-    camy /= camw;
-    camz /= camw;
-
-    ray->dir.x = camera2world[4*0+0] * camx + camera2world[4*0+1] * camy + camera2world[4*0+2] * camz;
-    ray->dir.y = camera2world[4*1+0] * camx + camera2world[4*1+1] * camy + camera2world[4*1+2] * camz;
-    ray->dir.z = camera2world[4*2+0] * camx + camera2world[4*2+1] * camy + camera2world[4*2+2] * camz;
-
-    ray->origin.x = camera2world[4*0+3] / camera2world[4*3+3];
-    ray->origin.y = camera2world[4*1+3] / camera2world[4*3+3];
-    ray->origin.z = camera2world[4*2+3] / camera2world[4*3+3];
+	ray->origin = cam->camera_origin.xyz;
+	ray->dir = cam->camera_lower_left_corner.xyz + s*cam->camera_horizontal.xyz + t*cam->camera_vertical.xyz - cam->camera_origin.xyz;
 }
 
 static inline bool
@@ -229,11 +229,11 @@ static inline float raymarch
 }
 
 __kernel
-void render(
+void render
+(
 	int max_x, int max_y, int3 nVoxels,
 	__global const float* restrict density,
-	__global const float* restrict raster2camera,
-	__global const float* restrict camera2world,
+	__global const Camera* restrict gCamera,
 	__write_only image2d_t destTex
 )
 {
@@ -242,9 +242,13 @@ void render(
 	if((x >= max_x) || (y >= max_y))
 		return;
 	
+	Camera cam = gCamera[0];
+	float u = (float)(x) / (float)(max_x);
+	float v = (float)(y) / (float)(max_y);
+	
 	Ray ray;
-	generateRay(raster2camera, camera2world, (float)x, (float)y, &ray);
+	generateRay(&cam, u, v, &ray);
 	
 	float4 finalColor = raymarch(&ray, nVoxels, density);
-	write_imagef(destTex, (int2)(x,y), min(finalColor, (float4)(1.0f,1.0f,1.0f,1.0f)));
+	write_imagef(destTex, (int2)(x,max_y-1-y), min(finalColor, (float4)(1.0f,1.0f,1.0f,1.0f)));
 }
