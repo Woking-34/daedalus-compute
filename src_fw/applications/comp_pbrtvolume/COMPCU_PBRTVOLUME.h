@@ -1,15 +1,15 @@
 #ifndef COMPCU_RTOW_H
 #define COMPCU_RTOW_H
 
-#include "COMP_RTOW.h"
+#include "COMP_PBRTVOLUME.h"
 
 #include "cuutil/cubase.h"
 
-class COMPCU_RTOW : public COMP_RTOW
+class COMPCU_PBRTVOLUME : public COMP_PBRTVOLUME
 {
 public:
-	COMPCU_RTOW();
-	~COMPCU_RTOW();
+	COMPCU_PBRTVOLUME();
+	~COMPCU_PBRTVOLUME();
 	
 	void init();
 	void terminate();
@@ -23,10 +23,7 @@ public:
 	cudaArray_t viewCudaArray;
 
 	void* cuMCamera;
-	void* cuMSeed0;
-	void* cuMSeed1;
-	void* cuMSpheres;
-	void* cuMMaterials;
+	void* cuMVolumeData;
 };
 
 #endif

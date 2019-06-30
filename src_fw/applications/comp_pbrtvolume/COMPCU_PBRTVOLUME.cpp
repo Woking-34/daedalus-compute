@@ -1,30 +1,26 @@
-#include "COMPCU_RTOW.h"
-#include "COMP_RTOW_TYPES.h"
+#include "COMPCU_PBRTVOLUME.h"
 
 #include "system/log.h"
 #include "system/filesystem.h"
 
-extern "C" void cuK_rtow
+extern "C" void cuK_pbrtvolume
 (
-	int max_x, int max_y, int sampleNum, int sphereNum, void* cuMSpheres, void* cuMMaterials, void* cuMCamera, void* cuMSeed0, void* cuMSeed1, cudaSurfaceObject_t viewCudaSurfaceObject,
+	int max_x, int max_y, int3 nVoxels, void* cuMVolumeData, void* cuMCamera, cudaSurfaceObject_t viewCudaSurfaceObject,
 	unsigned int gSizeX, unsigned int gSizeY, unsigned int lSizeX, unsigned int lSizeY
 );
 
-COMPCU_RTOW::COMPCU_RTOW()
+COMPCU_PBRTVOLUME::COMPCU_PBRTVOLUME()
 {
 	cuMCamera = NULL;
-	cuMSeed0 = NULL;
-	cuMSeed1 = NULL;
-	cuMSpheres = NULL;
-	cuMMaterials = NULL;
+	cuMVolumeData = NULL;
 }
 
-COMPCU_RTOW::~COMPCU_RTOW()
+COMPCU_PBRTVOLUME::~COMPCU_PBRTVOLUME()
 {
 
 }
 
-void COMPCU_RTOW::init()
+void COMPCU_PBRTVOLUME::init()
 {
 	cudaError_t cuStatus = cudaSuccess;
 
@@ -58,17 +54,8 @@ void COMPCU_RTOW::init()
 	CHECK_CU(cudaMalloc((void**)&cuMCamera, 8*4 * sizeof(float)));
 	CHECK_CU(cudaMemcpy(cuMCamera, cameraArray, 8*4 * sizeof(float), cudaMemcpyHostToDevice));
 
-	CHECK_CU(cudaMalloc((void**)&cuMSpheres, sphereNum * sizeof(rtow_sphere)));
-	CHECK_CU(cudaMemcpy(cuMSpheres, sphereArrayHost, sphereNum * sizeof(rtow_sphere), cudaMemcpyHostToDevice));
-
-	CHECK_CU(cudaMalloc((void**)&cuMMaterials, materialNum * sizeof(rtow_material)));
-	CHECK_CU(cudaMemcpy(cuMMaterials, materialArrayHost, materialNum * sizeof(rtow_material), cudaMemcpyHostToDevice));
-
-	CHECK_CU(cudaMalloc((void**)&cuMSeed0, launchW*launchH * sizeof(unsigned int)));
-	CHECK_CU(cudaMemcpy(cuMSeed0, seed0, launchW*launchH * sizeof(unsigned int), cudaMemcpyHostToDevice));
-
-	CHECK_CU(cudaMalloc((void**)&cuMSeed1, launchW*launchH * sizeof(unsigned int)));
-	CHECK_CU(cudaMemcpy(cuMSeed1, seed1, launchW*launchH * sizeof(unsigned int), cudaMemcpyHostToDevice));
+	CHECK_CU(cudaMalloc((void**)&cuMVolumeData, vX*vY*vZ * sizeof(float)));
+	CHECK_CU(cudaMemcpy(cuMVolumeData, volumeData, vX*vY*vZ * sizeof(float), cudaMemcpyHostToDevice));
 
 	if (useInterop)
 	{
@@ -104,7 +91,7 @@ void COMPCU_RTOW::init()
 	CHECK_CU(cudaDeviceSynchronize());
 }
 
-void COMPCU_RTOW::terminate()
+void COMPCU_PBRTVOLUME::terminate()
 {
 	if (useInterop)
 	{
@@ -117,38 +104,22 @@ void COMPCU_RTOW::terminate()
 		CHECK_CU(cudaDestroySurfaceObject(viewCudaSurfaceObject));
 	}
 
-	if (cuMSpheres)
-	{
-		CHECK_CU(cudaFree(cuMSpheres));
-		cuMSpheres = NULL;
-	}
-	if (cuMMaterials)
-	{
-		CHECK_CU(cudaFree(cuMMaterials));
-		cuMMaterials = NULL;
-	}
-
 	if (cuMCamera)
 	{
 		CHECK_CU(cudaFree(cuMCamera));
 		cuMCamera = NULL;
 	}
 
-	if(cuMSeed0)
+	if(cuMVolumeData)
 	{
-		CHECK_CU(cudaFree(cuMSeed0));
-		cuMSeed0 = NULL;
-	}
-	if(cuMSeed1)
-	{
-		CHECK_CU(cudaFree(cuMSeed1));
-		cuMSeed1 = NULL;
+		CHECK_CU(cudaFree(cuMVolumeData));
+		cuMVolumeData = NULL;
 	}
 
 	CHECK_CU(cudaDeviceReset());
 }
 
-void COMPCU_RTOW::compute()
+void COMPCU_PBRTVOLUME::compute()
 {
 	if(useInterop)
 	{
@@ -161,7 +132,12 @@ void COMPCU_RTOW::compute()
 	}
 
 	{
-		cuK_rtow( launchW, launchH, sampleNum, sphereNum, cuMSpheres, cuMMaterials, cuMCamera, cuMSeed0, cuMSeed1, viewCudaSurfaceObject, launchW, launchH, wgsX, wgsY );
+		int3 nVoxels;
+		nVoxels.x = vX;
+		nVoxels.y = vY;
+		nVoxels.z = vZ;
+
+		cuK_pbrtvolume( launchW, launchH, nVoxels, cuMVolumeData, cuMCamera, viewCudaSurfaceObject, launchW, launchH, wgsX, wgsY );
 	}
 
 	if(useInterop)
@@ -172,7 +148,7 @@ void COMPCU_RTOW::compute()
 	CHECK_CU(cudaDeviceSynchronize());
 }
 
-void COMPCU_RTOW::download()
+void COMPCU_PBRTVOLUME::download()
 {
 	// TODO: fix this
 	//CHECK_CU(cudaMemcpy(outputFLT, cuMImage, launchW*launchH*sizeof(float4), cudaMemcpyDeviceToHost));
