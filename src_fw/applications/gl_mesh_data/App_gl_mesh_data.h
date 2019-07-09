@@ -25,13 +25,13 @@ public:
 	virtual std::string GetName();
 
 protected:
-	Camera myCamera;
-	Vec4f camEye, camCenter, camUp;
+	daedalus::Camera myCamera;
+	daedalus::Vec4f camEye, camCenter, camUp;
 	float camFOV, camNear, camFar;
 
 	const int numScenes;
 	int sceneSelcet[3];
-	Vec4f camInitPos[3];
+	daedalus::Vec4f camInitPos[3];
 
 	GLProgram progAlbedoVertCol;
 	GLProgram progAlbedoTexCol;
@@ -50,7 +50,7 @@ protected:
 	void createCornellBox(MeshFile& mfCornell);
 
 	GLuint texIds[16]; // 15 ball + cloth
-	Mat44f ballMatrices[15];
+	daedalus::Mat44f ballMatrices[15];
 
 	float ballRad;
 	float clothSize;

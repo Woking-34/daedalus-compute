@@ -308,6 +308,8 @@ int triTable[256][16] =
 	{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
 };
 
+using namespace daedalus;
+
 App AppInstance;
 
 App::App()

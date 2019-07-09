@@ -4,6 +4,8 @@
 #include "math/mathbase.h"
 #include "math/core/vec.h"
 
+namespace daedalus {
+
 template<typename T> struct Ray
 {
 	T org, dir;
@@ -16,4 +18,6 @@ template<typename T> struct Ray
 
 typedef Ray<Vec4f> Ray4f;
 
-#endif
+} // namespace daedalus
+
+#endif // RAY_H

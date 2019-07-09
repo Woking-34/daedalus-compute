@@ -12,6 +12,8 @@
 #include "system/timer.h"
 #include "system/filesystem.h"
 
+using namespace daedalus;
+
 App AppInstance;
 
 App::App()

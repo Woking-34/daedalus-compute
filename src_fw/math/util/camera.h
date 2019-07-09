@@ -7,6 +7,8 @@
 
 #include "math/util/ray.h"
 
+namespace daedalus {
+
 class Camera
 {
 public:
@@ -198,4 +200,6 @@ public:
 	Vec4f up;
 };
 
-#endif
+} // namespace daedalus
+
+#endif // CAMERA_H

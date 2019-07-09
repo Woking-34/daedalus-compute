@@ -3,6 +3,8 @@
 #include "system/log.h"
 #include "system/filesystem.h"
 
+using namespace daedalus;
+
 App AppInstance;
 
 App::App()

@@ -33,7 +33,7 @@ public:
 protected:
 	int deformMode;
 
-	Camera mainCamera;
+	daedalus::Camera mainCamera;
 
 	// run params
 	bool useInterop;
@@ -56,7 +56,7 @@ protected:
 	GLuint vboID;
 	GLuint iboID;
 
-	Vec4f* initVBO;
+	daedalus::Vec4f* initVBO;
 	unsigned int* initIBO;
 	
 	GLProgram renderProgram;

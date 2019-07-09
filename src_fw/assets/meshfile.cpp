@@ -4,6 +4,8 @@
 #include "system/filesystem.h"
 #include "system/log.h"
 
+using namespace daedalus;
+
 void MeshFile::setName(const std::string& fileName, const std::string& fileNameSub)
 {
 	this->coreName = fileName.substr(0, fileName.size()-4);

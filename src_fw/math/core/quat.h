@@ -3,6 +3,8 @@
 
 #include "math/mathbase.h"
 
+namespace daedalus {
+
 template<typename T> struct Quat
 {
 	T r, i, j, k;
@@ -17,4 +19,6 @@ template<typename T> struct Quat
     //INLINE Quat( const T& yaw, const T& pitch, const T& roll );
 };
 
-#endif
+} // namespace daedalus
+
+#endif // QUATERNION_H

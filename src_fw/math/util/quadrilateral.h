@@ -5,6 +5,8 @@
 #include "math/core/vec.h"
 #include "math/util/aabb.h"
 
+namespace daedalus {
+
 template<typename T> struct Quadrilateral
 {
 	union
@@ -62,4 +64,6 @@ public:
 	}
 };
 
-#endif
+} // namespace daedalus
+
+#endif // QUADRILATERAL_H

@@ -26,8 +26,8 @@ public:
 	virtual std::string GetName();
 
 protected:
-	Camera myCamera;
-	Vec4f camEye, camCenter, camUp;
+	daedalus::Camera myCamera;
+	daedalus::Vec4f camEye, camCenter, camUp;
 	float camFOV, camNear, camFar;
 
 	GLProgram progAlbedoVertCol;

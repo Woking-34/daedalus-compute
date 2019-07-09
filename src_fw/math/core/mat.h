@@ -4,6 +4,8 @@
 #include "math/mathbase.h"
 #include "math/core/vec.h"
 
+namespace daedalus {
+
 #define OP operator
 #define DECL template <typename T> INLINE
 #define MAT22 Mat22<T>
@@ -377,4 +379,6 @@ typedef Mat44<double> Mat44d;
 #undef MAT22ARG
 #undef MAT44ARG
 
-#endif
+} // namespace daedalus
+
+#endif // MATRIX_H

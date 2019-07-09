@@ -5,6 +5,8 @@
 #include "math/core/vec.h"
 #include "math/util/aabb.h"
 
+namespace daedalus {
+
 template<typename T> struct Triangle
 {
 	union
@@ -65,4 +67,6 @@ public:
 	}
 };
 
-#endif
+} // namespace daedalus
+
+#endif // TRIANGLE_H

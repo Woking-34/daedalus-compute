@@ -41,7 +41,7 @@ protected:
 	bool useCLGDevice;
 	int useCLPId, useCLDId;
 
-	Camera mainCamera;
+	daedalus::Camera mainCamera;
 
 	int wgsX, wgsY, wgsZ;
 
@@ -64,9 +64,9 @@ protected:
 
 	GLuint vboBBox;
 
-	Vec4f* initPos;
-	Vec4f* initCol;
-	Vec4f* initVel;
+	daedalus::Vec4f* initPos;
+	daedalus::Vec4f* initCol;
+	daedalus::Vec4f* initVel;
 	
 	GLProgram renderProgram_BBox;
 	GLProgram renderProgram_Particles;

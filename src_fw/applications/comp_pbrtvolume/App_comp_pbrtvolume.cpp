@@ -12,6 +12,8 @@
 #include "system/timer.h"
 #include "system/filesystem.h"
 
+using namespace daedalus;
+
 static void
 loadCamera(const std::string& fn, int& width, int& height, float* raster2camera, float* camera2world) {
 	FILE *f = fopen(fn.c_str(), "r");

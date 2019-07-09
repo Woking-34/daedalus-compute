@@ -3,6 +3,8 @@
 
 #include "math/mathbase.h"
 
+namespace daedalus {
+
 #define OP operator
 #define DECL template<typename T> INLINE
 
@@ -209,7 +211,7 @@ DECL V4 min(V4ARG a, V4ARG b) {return V4(min(a.x, b.x), min(a.y, b.y), min(a.z, 
 DECL V4 max(V4ARG a, V4ARG b) {return V4(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z), max(a.w, b.w));}
 
 DECL T dot (V4ARG a, V4ARG b) {return a.x*b.x + a.y*b.y + a.z*b.z + a.w*b.w;}
-DECL T length(V4ARG a) {return sqrt(dot(a,a));}
+DECL T length(V4ARG a) {return std::sqrt(dot(a,a));}
 DECL T distance (V4ARG a, V4ARG b) {return length(a-b);}
 DECL V4 normalize(V4ARG a) {return a*rsqrt(dot(a,a));}
 DECL V4 cross(V4ARG a, V4ARG b)
@@ -440,4 +442,6 @@ typedef Vec4<double> Vec4d;
 #undef V2ARG
 #undef V4ARG
 
-#endif
+} // namespace daedalus
+
+#endif // VECTOR_H

@@ -1,5 +1,7 @@
 #include "intersect.h"
 
+namespace daedalus {
+
 bool intersectAABB( const Ray4f& ray, const AABB4f& aabb, float& tNear, float& tFar)
 {	
 	const Vec4f dirInv= rcp(ray.dir);
@@ -31,7 +33,7 @@ bool intersectSphere( const Ray4f& ray, const Sphere4f& sphere, float& tRay )
 		return 0;
 	}
 
-	disc = sqrt(disc);
+	disc = std::sqrt(disc);
 
 	tRay = (-b - disc) / (2.0f*a);
 	if(tRay > 0.0f)
@@ -76,3 +78,5 @@ bool intersectParallelogram( const Ray4f& ray, const Parallelogram& prlll, float
 
 	return b1 >= 0.0f && b2 >= 0.0f && b1 <= 1.0f && b2 <= 1.0f && tRay > 0.0f;
 }
+
+} // namespace daedalus

@@ -4,6 +4,8 @@
 #include "math/mathbase.h"
 #include "math/core/vec.h"
 
+namespace daedalus {
+
 template<typename T> struct AABB
 {
 	T lower, upper;
@@ -71,4 +73,6 @@ typedef AABB< Vec4f > AABB4f;
 typedef AABB< Vec2d > AABB2d;
 typedef AABB< Vec4d > AABB4d;
 
-#endif 
+} // namespace daedalus
+
+#endif // AABB_H

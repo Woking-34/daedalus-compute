@@ -3,6 +3,8 @@
 #include "math/mathbase.h"
 #include "assets/meshfile.h"
 
+using namespace daedalus;
+
 GLMesh::GLMesh()
 {
 	vertices = nullptr;

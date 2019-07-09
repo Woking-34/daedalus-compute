@@ -30,11 +30,11 @@ public:
 protected:
 	int renderMode;
 
-	Camera mainCamera;
+	daedalus::Camera mainCamera;
 
 	VolumeData< uchar > volumeData;
 	//VolumeData< float > volumeData;
-	Vec4uc* volumeDataTFF;
+	daedalus::Vec4uc* volumeDataTFF;
 
 	std::string volumeName;
 	GLsizei volumeW, volumeH, volumeD;

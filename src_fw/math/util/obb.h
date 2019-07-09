@@ -5,6 +5,8 @@
 #include "math/core/vec.h"
 #include "math/core/mat.h"
 
+namespace daedalus {
+
 template<typename T> struct OBB
 {
 	Mat44<T> mat;	// local frame + center
@@ -13,4 +15,6 @@ template<typename T> struct OBB
 	INLINE OBB() {}
 };
 
-#endif
+} // namespace daedalus
+
+#endif // OBB_H

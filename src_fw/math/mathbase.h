@@ -3,9 +3,11 @@
 
 #include "system/constants.h"
 
+namespace daedalus {
+
 template<typename T> INLINE T sqr(const T& x) { return x*x; }
 template<typename T> INLINE T rcp(const T& x) { return T(one)/x; }
-template<typename T> INLINE T rsqrt(const T& x) { return T(one)/sqrt(x); }
+template<typename T> INLINE T rsqrt(const T& x) { return T(one)/std::sqrt(x); }
 
 template<typename T> INLINE T sign(const T& x) { return x<T(zero) ? -T(one) : T(one); }
 template<typename T> INLINE bool samesign(const T& x, const T& y) { return x*y >= T(zero); } 
@@ -91,4 +93,6 @@ inline void normalizeArray(float* data, int numelements)
 	}
 }
 
-#endif 
+} // namespace daedalus
+
+#endif // MATHBASE_H

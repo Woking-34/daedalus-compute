@@ -19,6 +19,8 @@
 #include "drand48.h"
 #endif
 
+using namespace daedalus;
+
 App AppInstance;
 
 App::App()

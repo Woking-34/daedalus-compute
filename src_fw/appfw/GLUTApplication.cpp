@@ -5,6 +5,8 @@
 
 #include "math/util/camera.h"
 
+using namespace daedalus;
+
 GLUTApplication* GLUTApplication::sApplication = NULL;
 
 GLUTApplication::GLUTApplication()

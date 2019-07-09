@@ -4,7 +4,9 @@
 #include "system/platform.h"
 #include "glutil/glbase.h"
 
-class Camera;
+namespace daedalus {
+	class Camera;
+}
 
 class GLUTApplication
 {
@@ -58,7 +60,7 @@ protected:
 	int currWidth, currHeight;
 	bool isWire;
 
-	Camera* appCamera;
+	daedalus::Camera* appCamera;
 	float translationScale, rotationScale;
 	
 	bool normalKeyState[256], specialKeyState[256], mouseState[3];

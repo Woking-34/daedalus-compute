@@ -12,6 +12,8 @@
 #include "math/util/triangle.h"
 #include "math/util/quadrilateral.h"
 
+namespace daedalus {
+
 class HitPoint4f
 {
 public:
@@ -25,4 +27,6 @@ bool intersectSphere( const Ray4f& ray, const Sphere4f& sphere, float& tRay );
 bool intersectTriEdgePlane( const Ray4f& ray, const TriEdgePlane& tri,  float& tRay, float& b1, float& b2);
 bool intersectParallelogram( const Ray4f& ray, const Parallelogram& prlll, float& tRay, float& b1, float& b2);
 
-#endif
+} // namespace daedalus
+
+#endif // INTERSECT_H

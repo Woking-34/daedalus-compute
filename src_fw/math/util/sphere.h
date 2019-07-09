@@ -4,6 +4,8 @@
 #include "math/mathbase.h"
 #include "math/core/vec.h"
 
+namespace daedalus {
+
 template<typename T> struct Sphere
 {
 	T org;
@@ -17,4 +19,6 @@ template<typename T> struct Sphere
 
 typedef Sphere<Vec4f> Sphere4f;
 
-#endif
+} // namespace daedalus
+
+#endif // SPHERE_H

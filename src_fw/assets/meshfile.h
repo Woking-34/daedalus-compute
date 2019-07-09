@@ -53,14 +53,14 @@ public:
 	void createConeTris(float height, float angle, unsigned int segs);
 	void createConeWire(float height, float angle, unsigned int segs);
 
-	std::vector<Vec4f> position0Vec;
-	std::vector<Vec4f> position1Vec;
-	std::vector<Vec4f> normals0Vec;
-	std::vector<Vec4f> normals1Vec;
-	std::vector<Vec4f> colors0Vec;
-	std::vector<Vec4f> colors1Vec;
-	std::vector<Vec2f> uvcoord0Vec;
-	std::vector<Vec2f> uvcoord1Vec;
+	std::vector<daedalus::Vec4f> position0Vec;
+	std::vector<daedalus::Vec4f> position1Vec;
+	std::vector<daedalus::Vec4f> normals0Vec;
+	std::vector<daedalus::Vec4f> normals1Vec;
+	std::vector<daedalus::Vec4f> colors0Vec;
+	std::vector<daedalus::Vec4f> colors1Vec;
+	std::vector<daedalus::Vec2f> uvcoord0Vec;
+	std::vector<daedalus::Vec2f> uvcoord1Vec;
 
 	std::vector< std::vector<unsigned int> > boneindicesVec;
 	std::vector< std::vector<float> > boneweightsVec;
@@ -81,29 +81,29 @@ public:
 	std::vector< std::string > usemtlVec;
 
 	// util functions
-	AABB4f getAABB() const;
+	daedalus::AABB4f getAABB() const;
 
 	void generateNormals();
 	void copyNormalsToColors();
 
-	void setPositionVec(const Vec4f* x, unsigned int numElements);
-	void setNormalVec(const Vec4f* x, unsigned int numElements);
-	void setColorVec(const Vec4f* x, unsigned int numElements);
+	void setPositionVec(const daedalus::Vec4f* x, unsigned int numElements);
+	void setNormalVec(const daedalus::Vec4f* x, unsigned int numElements);
+	void setColorVec(const daedalus::Vec4f* x, unsigned int numElements);
 	void setColorVec(float r, float g, float b);
 
-	void add(const MeshFile& meshdata, const Mat44f& mat);
+	void add(const MeshFile& meshdata, const daedalus::Mat44f& mat);
 
 	// cornell box helper
-	void addParallelogram(const Vec4f& anchor, const Vec4f& offset1, const Vec4f& offset2, const Vec4f& c);
+	void addParallelogram(const daedalus::Vec4f& anchor, const daedalus::Vec4f& offset1, const daedalus::Vec4f& offset2, const daedalus::Vec4f& c);
 
 	void triangulate();
 	void tesselate();
 
 	void scale(float s);
-	void scale(const Vec4f& scaleVec);
+	void scale(const daedalus::Vec4f& scaleVec);
 
 	void translate(float x, float y, float z);
-	void translate(const Vec4f& translateVec);
+	void translate(const daedalus::Vec4f& translateVec);
 
 	void scaleToUnitCube();
 	void placeToXZPlane();
@@ -151,12 +151,12 @@ protected:
 	{
 		MaterialDescObj()
 		{
-			ka = kd = ks = Vec4f(0.0f, 0.0f, 0.0f, 1.0f);
+			ka = kd = ks = daedalus::Vec4f(0.0f, 0.0f, 0.0f, 1.0f);
 		};
 
 		std::string name;
 
-		Vec4f ka, kd, ks;
+		daedalus::Vec4f ka, kd, ks;
 
 		std::string diffMap;
 		std::string specMap;

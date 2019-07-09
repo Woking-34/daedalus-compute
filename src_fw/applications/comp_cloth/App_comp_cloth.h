@@ -41,7 +41,7 @@ protected:
 	bool useCLGDevice;
 	int useCLPId, useCLDId;
 
-	Camera mainCamera;
+	daedalus::Camera mainCamera;
 
 	int launchW, launchH;
 	int wgsX, wgsY;
@@ -60,8 +60,8 @@ protected:
 	GLuint vboID_Normals;
 	GLuint iboID;
 
-	Vec4f* initPositions;
-	Vec4f* initNormals;
+	daedalus::Vec4f* initPositions;
+	daedalus::Vec4f* initNormals;
 	unsigned int* initIBO;
 	
 	float* initWeights;

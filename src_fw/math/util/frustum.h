@@ -5,6 +5,8 @@
 #include "math/base/vec.h"
 #include "math/base/mat.h"
 
+namespace daedalus {
+
 template<typename T> struct Frustum
 {
 	T left, right, bottom, top, near, far;
@@ -62,4 +64,6 @@ template<typename T> INLINE Frustum<T> createProjectionPerspectiveFrustum(const 
 	return f;
 }
 
-#endif
+} // namespace daedalus
+
+#endif // FRUSTUM_H

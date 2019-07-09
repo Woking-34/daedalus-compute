@@ -32,7 +32,7 @@ public:
 
 protected:
 	bool isDynamicCamera;
-	Camera mainCamera;
+	daedalus::Camera mainCamera;
 
 	// run params
 	bool useInterop;
@@ -64,7 +64,7 @@ protected:
 	GLProgram fsqProgram;
 
 	/// camera params
-	Vec4f origin, u, v, w;
+	daedalus::Vec4f origin, u, v, w;
 	float vfov = 20.0f;
 	float lens_radius;
 	
