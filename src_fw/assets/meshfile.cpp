@@ -842,6 +842,76 @@ void MeshFile::createBoxWire(float w, float h, float l)
 	printInfo();
 }
 
+void MeshFile::createBoxWire(float minX, float minY, float minZ, float maxX, float maxY, float maxZ)
+{
+	std::stringstream ssName;
+	ssName << "boxWire_" << 1 << "x" << 1 << "x" << 1;
+
+	coreName = ssName.str();
+	extName = "gen";
+
+	primType = MESHPRIM_TYPE_LINES;
+	numVertsPrim = 2;
+
+	numVertices = 8;
+	numPrimitives = 12;
+
+	// bottom face
+	position0Vec.push_back(Vec4f(maxX, minY, maxZ, 1.0f));
+	position0Vec.push_back(Vec4f(minX, minY, maxZ, 1.0f));
+	position0Vec.push_back(Vec4f(minX, minY, minZ, 1.0f));
+	position0Vec.push_back(Vec4f(maxX, minY, minZ, 1.0f));
+
+	// top face
+	position0Vec.push_back(Vec4f(maxX, maxY, maxZ, 1.0f));
+	position0Vec.push_back(Vec4f(minX, maxY, maxZ, 1.0f));
+	position0Vec.push_back(Vec4f(minX, maxY, minZ, 1.0f));
+	position0Vec.push_back(Vec4f(maxX, maxY, minZ, 1.0f));
+
+	std::vector< unsigned int > line00;
+	std::vector< unsigned int > line01;
+	std::vector< unsigned int > line02;
+	std::vector< unsigned int > line03;
+	line00.push_back(0); line00.push_back(1);
+	line01.push_back(1); line01.push_back(2);
+	line02.push_back(2); line02.push_back(3);
+	line03.push_back(3); line03.push_back(0);
+
+	std::vector< unsigned int > line04;
+	std::vector< unsigned int > line05;
+	std::vector< unsigned int > line06;
+	std::vector< unsigned int > line07;
+	line04.push_back(4); line04.push_back(5);
+	line05.push_back(5); line05.push_back(6);
+	line06.push_back(6); line06.push_back(7);
+	line07.push_back(7); line07.push_back(4);
+
+	std::vector< unsigned int > line08;
+	std::vector< unsigned int > line09;
+	std::vector< unsigned int > line10;
+	std::vector< unsigned int > line11;
+	line08.push_back(0); line08.push_back(0 + 4);
+	line09.push_back(1); line09.push_back(1 + 4);
+	line10.push_back(2); line10.push_back(2 + 4);
+	line11.push_back(3); line11.push_back(3 + 4);
+
+	indicesVec.push_back(line00);
+	indicesVec.push_back(line01);
+	indicesVec.push_back(line02);
+	indicesVec.push_back(line03);
+	indicesVec.push_back(line04);
+	indicesVec.push_back(line05);
+	indicesVec.push_back(line06);
+	indicesVec.push_back(line07);
+	indicesVec.push_back(line08);
+	indicesVec.push_back(line09);
+	indicesVec.push_back(line10);
+	indicesVec.push_back(line11);
+
+	fillAttributeVec();
+	printInfo();
+}
+
 void MeshFile::createSphereTris(float rad, unsigned int hSegs, unsigned int vSegs)
 {
 	std::stringstream ssName;

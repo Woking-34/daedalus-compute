@@ -43,6 +43,7 @@ public:
 	
 	void createBoxTris(float w, float h, float l);
 	void createBoxWire(float w, float h, float l);
+	void createBoxWire(float minX, float minY, float minZ, float maxX, float maxY, float maxZ);
 
 	void createSphereTris(float rad, unsigned int hSegs, unsigned int vSegs);
 	void createSphereWire(float rad, unsigned int segs);
