@@ -115,6 +115,8 @@ ADD_SUBDIRECTORY( ./src_fw/applications/comp_particles )
 
 ADD_SUBDIRECTORY( ./src_fw/applications/compute_info )
 
+#ADD_SUBDIRECTORY( ./src_fw/applications/flex_dambreak )
+
 #ADD_SUBDIRECTORY( ./src_fw/applications/gl_mesh_seq )
 #ADD_SUBDIRECTORY( ./src_fw/applications/gl_mesh_data )
 #ADD_SUBDIRECTORY( ./src_fw/applications/gl_volume_viz )

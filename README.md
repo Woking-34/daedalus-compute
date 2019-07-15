@@ -21,6 +21,9 @@ Tiny collection of compute demos, no wrapper around the compute APIs, tested on 
 ## PBRT ray-marching volume rendering, with single scattering lighting model
 <p align="center"><img src="docs/comp_pbrtvolume.jpg" width="800" /></p>
 
+## NVIDIA FleX Demo - DamBreak
+<p align="center"><img src="docs/flex_particles.jpg" width="800" /></p>
+
 ## OpenCL platform and deivce info for Intel i7-6770HQ  + Iris Pro Graphics 580
 ```
 PLATFORM #0
@@ -145,3 +148,4 @@ comp_particles_gl.exe
  - [petershirley - raytracinginoneweekend](https://github.com/petershirley/raytracinginoneweekend)
  - [rogerallen - raytracinginoneweekendincuda](https://github.com/rogerallen/raytracinginoneweekendincuda)
  - [ISPC examples - volume_rendering](https://github.com/ispc/ispc/tree/master/examples/volume_rendering)
+ - [NVIDIA GameWorks - FleX](https://developer.nvidia.com/flex)
