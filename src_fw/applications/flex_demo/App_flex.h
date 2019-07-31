@@ -17,10 +17,14 @@
 #include "include/NvFlexDevice.h"
 
 #include "maths.h"
+#include "perlin.h"
 
+#include <utility>
+#include <algorithm>
 #include <vector>
 
 // Flex Demo - DamBreak 5cm
+// Flex Demo - Flag Cloth
 
 std::vector<daedalus::Vec4f> initCol;
 std::vector<daedalus::Vec4f> initPos;
@@ -332,6 +336,16 @@ void GetParticleBounds(Vec3& lower, Vec3& upper)
 	}
 }
 
+inline int GridIndex(int x, int y, int dx) { return y * dx + x; }
+
+void CreateSpring(int i, int j, float stiffness, float give = 0.0f)
+{
+	g_buffers->springIndices.push_back(i);
+	g_buffers->springIndices.push_back(j);
+	g_buffers->springLengths.push_back((1.0f + give)*Length(Vec3(g_buffers->positions[i]) - Vec3(g_buffers->positions[j])));
+	g_buffers->springStiffness.push_back(stiffness);
+}
+
 void CreateParticleGrid(Vec3 lower, int dimx, int dimy, int dimz, float radius, Vec3 velocity, float invMass, bool rigid, float rigidStiffness, int phase, float jitter = 0.005f)
 {
 	if (rigid && g_buffers->rigidIndices.empty())
@@ -353,7 +367,6 @@ void CreateParticleGrid(Vec3 lower, int dimx, int dimy, int dimz, float radius, 
 				g_buffers->phases.push_back(phase);
 
 				initPos.push_back(daedalus::Vec4f(position.x, position.y, position.z, 1.0f));
-				//initCol.push_back(daedalus::Vec4f(x/(float)dimx, y/(float)dimy, z/(float)dimz, 1.0f));
 				initCol.push_back(daedalus::Vec4f(0.0f, 0.5f, 1.0f, 1.0f));
 			}
 		}
@@ -363,6 +376,97 @@ void CreateParticleGrid(Vec3 lower, int dimx, int dimy, int dimz, float radius, 
 	{
 		g_buffers->rigidCoefficients.push_back(rigidStiffness);
 		g_buffers->rigidOffsets.push_back(int(g_buffers->rigidIndices.size()));
+	}
+}
+
+void CreateSpringGrid(Vec3 lower, int dx, int dy, int dz, float radius, int phase, float stretchStiffness, float bendStiffness, float shearStiffness, Vec3 velocity, float invMass)
+{
+	int baseIndex = int(g_buffers->positions.size());
+
+	for (int z = 0; z < dz; ++z)
+	{
+		for (int y = 0; y < dy; ++y)
+		{
+			for (int x = 0; x < dx; ++x)
+			{
+				Vec3 position = lower + radius * Vec3(float(x), float(z), float(y));
+
+				g_buffers->positions.push_back(Vec4(position.x, position.y, position.z, invMass));
+				g_buffers->velocities.push_back(velocity);
+				g_buffers->phases.push_back(phase);
+
+				initPos.push_back(daedalus::Vec4f(position.x, position.y, position.z, 1.0f));
+				initCol.push_back(daedalus::Vec4f(0.3f, 1.0f, 0.3f, 1.0f));
+
+				if (x > 0 && y > 0)
+				{
+					g_buffers->triangles.push_back(baseIndex + GridIndex(x - 1, y - 1, dx));
+					g_buffers->triangles.push_back(baseIndex + GridIndex(x, y - 1, dx));
+					g_buffers->triangles.push_back(baseIndex + GridIndex(x, y, dx));
+
+					g_buffers->triangles.push_back(baseIndex + GridIndex(x - 1, y - 1, dx));
+					g_buffers->triangles.push_back(baseIndex + GridIndex(x, y, dx));
+					g_buffers->triangles.push_back(baseIndex + GridIndex(x - 1, y, dx));
+
+					g_buffers->triangleNormals.push_back(Vec3(0.0f, 1.0f, 0.0f));
+					g_buffers->triangleNormals.push_back(Vec3(0.0f, 1.0f, 0.0f));
+				}
+			}
+		}
+	}
+
+	// horizontal
+	for (int y = 0; y < dy; ++y)
+	{
+		for (int x = 0; x < dx; ++x)
+		{
+			int index0 = y * dx + x;
+
+			if (x > 0)
+			{
+				int index1 = y * dx + x - 1;
+				CreateSpring(baseIndex + index0, baseIndex + index1, stretchStiffness);
+			}
+
+			if (x > 1)
+			{
+				int index2 = y * dx + x - 2;
+				CreateSpring(baseIndex + index0, baseIndex + index2, bendStiffness);
+			}
+
+			if (y > 0 && x < dx - 1)
+			{
+				int indexDiag = (y - 1)*dx + x + 1;
+				CreateSpring(baseIndex + index0, baseIndex + indexDiag, shearStiffness);
+			}
+
+			if (y > 0 && x > 0)
+			{
+				int indexDiag = (y - 1)*dx + x - 1;
+				CreateSpring(baseIndex + index0, baseIndex + indexDiag, shearStiffness);
+			}
+		}
+	}
+
+	// vertical
+	for (int x = 0; x < dx; ++x)
+	{
+		for (int y = 0; y < dy; ++y)
+		{
+			int index0 = y * dx + x;
+
+			if (y > 0)
+			{
+				int index1 = (y - 1)*dx + x;
+				CreateSpring(baseIndex + index0, baseIndex + index1, stretchStiffness);
+			}
+
+			if (y > 1)
+			{
+				int index2 = (y - 2)*dx + x;
+				CreateSpring(baseIndex + index0, baseIndex + index2, bendStiffness);
+			}
+		}
 	}
 }
 
@@ -416,8 +520,113 @@ public:
 	float mRadius;
 };
 
+class FlagCloth : public Scene
+{
+public:
+
+	FlagCloth(const char* name) : Scene(name) {}
+
+	void Initialize()
+	{
+		int dimx = 64;
+		int dimz = 32;
+		float radius = 0.05f;
+
+		float stretchStiffness = 0.9f;
+		float bendStiffness = 1.0f;
+		float shearStiffness = 0.9f;
+		int phase = NvFlexMakePhase(0, eNvFlexPhaseSelfCollide);
+
+		CreateSpringGrid(Vec3(0.0f, 0.0f, -3.0f), dimx, dimz, 1, radius, phase, stretchStiffness, bendStiffness, shearStiffness, 0.0f, 1.0f);
+
+		const int c1 = 0;
+		const int c2 = dimx * (dimz - 1);
+
+		g_buffers->positions[c1].w = 0.0f;
+		g_buffers->positions[c2].w = 0.0f;
+
+		// add tethers
+		for (int i = 0; i < int(g_buffers->positions.size()); ++i)
+		{
+			// hack to rotate cloth
+			std::swap(g_buffers->positions[i].y, g_buffers->positions[i].z);
+			g_buffers->positions[i].y *= -1.0f;
+
+			g_buffers->velocities[i] = RandomUnitVector()*0.1f;
+
+			float minSqrDist = FLT_MAX;
+
+			if (i != c1 && i != c2)
+			{
+				float stiffness = -0.8f;
+				float give = 0.1f;
+
+				float sqrDist = LengthSq(Vec3(g_buffers->positions[c1]) - Vec3(g_buffers->positions[c2]));
+
+				if (sqrDist < minSqrDist)
+				{
+					CreateSpring(c1, i, stiffness, give);
+					CreateSpring(c2, i, stiffness, give);
+
+					minSqrDist = sqrDist;
+				}
+			}
+		}
+
+		g_params.radius = radius * 1.0f;
+		g_params.dynamicFriction = 0.25f;
+		g_params.dissipation = 0.0f;
+		g_params.numIterations = 4;
+		g_params.drag = 0.06f;
+		g_params.relaxationFactor = 1.0f;
+
+		g_numSubsteps = 2;
+
+		// draw options
+		g_windFrequency *= 2.0f;
+		g_windStrength = 10.0f;
+	}
+
+	void Update()
+	{
+		const Vec3 kWindDir = Vec3(3.0f, 15.0f, 0.0f);
+		const float kNoise = fabsf(Perlin1D(g_windTime*0.05f, 2, 0.25f));
+		Vec3 wind = g_windStrength * kWindDir*Vec3(kNoise, kNoise*0.1f, -kNoise * 0.1f);
+
+		g_params.wind[0] = wind.x;
+		g_params.wind[1] = wind.y;
+		g_params.wind[2] = wind.z;
+	}
+};
+
 class Scene;
 std::vector<Scene*> g_scenes;
+
+void UpdateWind()
+{
+	g_windTime += g_dt;
+
+	const Vec3 kWindDir = Vec3(3.0f, 15.0f, 0.0f);
+	const float kNoise = Perlin1D(g_windTime*g_windFrequency, 10, 0.25f);
+	Vec3 wind = g_windStrength * kWindDir*Vec3(kNoise, fabsf(kNoise), 0.0f);
+
+	g_params.wind[0] = wind.x;
+	g_params.wind[1] = wind.y;
+	g_params.wind[2] = wind.z;
+
+	if (g_wavePool)
+	{
+		g_waveTime += g_dt;
+
+		g_params.planes[2][3] = g_wavePlane + (sinf(float(g_waveTime)*g_waveFrequency - kPi * 0.5f)*0.5f + 0.5f)*g_waveAmplitude;
+	}
+}
+
+void UpdateScene()
+{
+	// give scene a chance to make changes to particle buffers
+	g_scenes[0]->Update();
+}
 
 void ErrorCallback(NvFlexErrorSeverity severity, const char* msg, const char* file, int line)
 {
@@ -444,8 +653,14 @@ public:
 
 	void InitFlexScene()
 	{
-		g_scenes.push_back(new DamBreak("DamBreak  5cm", 0.05f));
+		g_scenes.clear();
 
+#ifdef flex_dambreak
+		g_scenes.push_back(new DamBreak("DamBreak  5cm", 0.05f));
+#endif
+#ifdef flex_flagcloth
+		g_scenes.push_back(new FlagCloth("Flag Cloth"));
+#endif
 		NvFlexInitDesc desc;
 		desc.deviceIndex = g_device;
 		desc.enableExtensions = g_extensions;
@@ -774,6 +989,21 @@ public:
 
 			NvFlexSetActive(g_solver, g_buffers->activeIndices.buffer, &copyDesc);
 			NvFlexSetActiveCount(g_solver, numParticles);
+
+			// springs
+			if (g_buffers->springIndices.size())
+			{
+				assert((g_buffers->springIndices.size() & 1) == 0);
+				assert((g_buffers->springIndices.size() / 2) == g_buffers->springLengths.size());
+
+				NvFlexSetSprings(g_solver, g_buffers->springIndices.buffer, g_buffers->springLengths.buffer, g_buffers->springStiffness.buffer, g_buffers->springLengths.size());
+			}
+
+			// dynamic triangles
+			if (g_buffers->triangles.size())
+			{
+				NvFlexSetDynamicTriangles(g_solver, g_buffers->triangles.buffer, g_buffers->triangleNormals.buffer, g_buffers->triangles.size() / 3);
+			}
 		}
 	}
 
@@ -787,8 +1017,8 @@ public:
 			{
 				//UpdateEmitters();
 				//UpdateMouse();
-				//UpdateWind();
-				//UpdateScene();
+				UpdateWind();
+				UpdateScene();
 
 				{
 					glBindBuffer(GL_ARRAY_BUFFER, vboPos);

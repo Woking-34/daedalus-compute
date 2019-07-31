@@ -1,4 +1,4 @@
-#include "App_flex_dambreak.h"
+#include "App_flex.h"
 
 #include "system/log.h"
 #include "system/timer.h"
@@ -45,7 +45,6 @@ void App::Initialize()
 
 	{
 		MeshFile mfAABB;
-		//mfAABB.createBoxWire(g_sceneUpper.x - g_sceneLower.x, g_sceneUpper.y - g_sceneLower.y, g_sceneUpper.z - g_sceneLower.z);
 		mfAABB.createBoxWire(g_sceneLower.x, g_sceneLower.y, g_sceneLower.z, g_sceneUpper.x, g_sceneUpper.y, g_sceneUpper.z);
 		mfAABB.setColorVec(1.0f, 1.0f, 1.0f);
 		mfAABB.flattenIndices();
@@ -61,10 +60,16 @@ void App::Initialize()
 	renderProgram_BBox.addFile("albedo_vertcolor.frag", GL_FRAGMENT_SHADER);
 	renderProgram_BBox.buildProgram();
 
-	Vec3 g_camPos = Vec3((g_sceneLower.x + g_sceneUpper.x)*0.5f, g_sceneUpper.y * 0.85f, (g_sceneUpper.z - g_sceneLower.z) * 3.0f);
+	Vec3 sceneExtents = g_sceneUpper - g_sceneLower;
+	Vec3 sceneCenter = 0.5f*(g_sceneUpper + g_sceneLower);
+
+	Vec3 g_camPos = Vec3((g_sceneLower.x + g_sceneUpper.x)*0.5f, std::min(g_sceneUpper.y*1.25f, 6.0f), g_sceneUpper.z + std::min(g_sceneUpper.y, 6.0f)*2.0f);
+	Vec3 g_camAngle = Vec3(0.0f, -DegToRad(15.0f), 0.0f);
+
+	Vec3 forward(-sinf(g_camAngle.x)*cosf(g_camAngle.y), sinf(g_camAngle.y), -cosf(g_camAngle.x)*cosf(g_camAngle.y));
 
 	const daedalus::Vec4f eye(g_camPos.x, g_camPos.y, g_camPos.z, 1.0f);
-	const daedalus::Vec4f center(g_camPos.x, g_camPos.y - 0.5f, g_camPos.z - 3.0f, 1.0f);
+	const daedalus::Vec4f center(g_camPos.x + forward.x, g_camPos.y + forward.y, g_camPos.z + forward.z, 1.0f);
 	const daedalus::Vec4f up(0.0f, 1.0f, 0.0f, 0.0f);
 
 	mainCamera.setViewParams(eye, center, up);
@@ -183,5 +188,11 @@ void App::Terminate()
 
 std::string App::GetName()
 {
+#ifdef flex_dambreak
 	return std::string("flex_dambreak");
+#endif
+#ifdef flex_flagcloth
+	return std::string("flex_flagcloth");
+#endif
+	
 }
