@@ -29,6 +29,10 @@
 std::vector<daedalus::Vec4f> initCol;
 std::vector<daedalus::Vec4f> initPos;
 
+std::vector<daedalus::Vec4f> clothTriPos;
+std::vector<daedalus::Vec4f> clothTriCol;
+std::vector<int> clothTriIndices;
+
 int g_frame = 0;
 int g_numSubsteps = 2;
 bool g_profile = false;
@@ -1027,6 +1031,25 @@ public:
 					glUnmapBuffer(GL_ARRAY_BUFFER);
 					glBindBuffer(GL_ARRAY_BUFFER, 0);
 				}
+
+				if(g_buffers->triangles.size())
+				{
+					clothTriPos.resize(g_buffers->positions.size());
+					clothTriCol.resize(g_buffers->normals.size());
+					clothTriIndices.resize(g_buffers->triangles.size());
+
+					memcpy(&clothTriPos[0], &g_buffers->positions[0], g_buffers->positions.size() * 4 * sizeof(float));
+					memcpy(&clothTriCol[0], &g_buffers->normals[0], g_buffers->normals.size() * 4 * sizeof(float));
+					memcpy(&clothTriIndices[0], &g_buffers->triangles[0], g_buffers->triangles.size() * sizeof(int));
+
+					// generate "valid" color from normal
+					for (daedalus::Vec4f& c : clothTriCol)
+					{
+						c.x = std::fabs(c.x);
+						c.y = std::fabs(c.y);
+						c.z = std::fabs(c.z);
+					}
+				}
 			}
 
 			UnmapBuffers(g_buffers);
@@ -1058,6 +1081,10 @@ public:
 			NvFlexGetParticles(g_solver, g_buffers->positions.buffer, NULL);
 			NvFlexGetVelocities(g_solver, g_buffers->velocities.buffer, NULL);
 			NvFlexGetNormals(g_solver, g_buffers->normals.buffer, NULL);
+
+			// readback triangle normals
+			if (g_buffers->triangles.size())
+				NvFlexGetDynamicTriangles(g_solver, g_buffers->triangles.buffer, g_buffers->triangleNormals.buffer, g_buffers->triangles.size() / 3);
 		}
 	}
 

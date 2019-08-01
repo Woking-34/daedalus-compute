@@ -122,6 +122,30 @@ void App::Render()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	CHECK_GL;
 
+	// draw cloth
+	if (g_buffers->triangles.size())
+	{
+		glMatrixMode(GL_PROJECTION);
+		glLoadMatrixf(mainCamera.projMat);
+
+		glMatrixMode(GL_MODELVIEW);
+		glLoadMatrixf(mainCamera.viewMat);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glEnableClientState(GL_COLOR_ARRAY);
+
+		glVertexPointer(3, GL_FLOAT, sizeof(float) * 4, &clothTriPos[0]);
+		glColorPointer(4, GL_FLOAT, sizeof(float) * 4, &clothTriCol[0]);
+
+		glDrawElements(GL_TRIANGLES, g_buffers->triangles.size(), GL_UNSIGNED_INT, &clothTriIndices[0]);
+
+		glDisableClientState(GL_VERTEX_ARRAY);
+		glDisableClientState(GL_COLOR_ARRAY);
+	}
+
 	{
 		renderProgram_BBox.useProgram();
 

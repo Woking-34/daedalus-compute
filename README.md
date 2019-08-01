@@ -22,7 +22,10 @@ Tiny collection of compute demos, no wrapper around the compute APIs, tested on 
 <p align="center"><img src="docs/comp_pbrtvolume.jpg" width="800" /></p>
 
 ## NVIDIA FleX Demo - DamBreak
-<p align="center"><img src="docs/flex_particles.jpg" width="800" /></p>
+<p align="center"><img src="docs/flex_dambreak.jpg" width="800" /></p>
+
+## NVIDIA FleX Demo - FlagCloth
+<p align="center"><img src="docs/flex_flagcloth.jpg" width="800" /></p>
 
 ## OpenCL platform and deivce info for Intel i7-6770HQ  + Iris Pro Graphics 580
 ```
