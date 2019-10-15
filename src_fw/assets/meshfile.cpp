@@ -229,6 +229,14 @@ bool MeshFile::loadFromPLY(const std::string& fileName)
 
 bool MeshFile::loadFromOBJ(const std::string& fileName, const std::string& fileNameMtlBase)
 {
+	// obj helper/utility vectors and structs
+	typedef std::tuple<uint32_t, uint32_t, uint32_t> VertexIndexDesc;
+	std::map<VertexIndexDesc, uint32_t> indexBufferDict;
+
+	std::vector<daedalus::Vec4f> position0VecTemp;
+	std::vector<daedalus::Vec4f> normals0VecTemp;
+	std::vector<daedalus::Vec2f> uvcoord0VecTemp;
+
 	std::ifstream inFile(fileName.c_str());
 	if( inFile.is_open() )
 	{
@@ -254,8 +262,8 @@ bool MeshFile::loadFromOBJ(const std::string& fileName, const std::string& fileN
 					lineStream >> vert.z;
 					vert.w = 1.0f;
 
-					position0Vec.push_back(vert);
-					usemtlVec.push_back(currMtlStr);
+					position0VecTemp.push_back(vert);
+					//usemtlVec.push_back(currMtlStr);
 				}
 				else if(objCommand == "vt") // vertex uvcoord
 				{
@@ -270,7 +278,7 @@ bool MeshFile::loadFromOBJ(const std::string& fileName, const std::string& fileN
 					lineStream >> normal.z;
 					normal.w = 0.0f;
 
-					normals0Vec.push_back(normal);
+					normals0VecTemp.push_back(normal);
 				}
 				else if(objCommand == "f") // face assembly
 				{
@@ -336,7 +344,22 @@ bool MeshFile::loadFromOBJ(const std::string& fileName, const std::string& fileN
 							vertexId = currVert + vertexId + 1;
 						}
 
-						indicesVec[currIndex].push_back(vertexId-1);
+						{
+							VertexIndexDesc vertex = std::make_tuple(vertexId, texcoordId, normalId);
+
+							if (indexBufferDict.count(vertex) == 0)
+							{
+								indicesVec[currIndex].emplace_back(indexBufferDict.size());
+								indexBufferDict[vertex] = indexBufferDict.size();
+
+								position0Vec.emplace_back(position0VecTemp[vertexId-1]);
+								normals0Vec.emplace_back(normals0VecTemp[normalId-1]);
+							}
+							else
+							{
+								indicesVec[currIndex].emplace_back(indexBufferDict.find(vertex)->second);
+							}
+						}
 					}
 				}
 				else if(objCommand == "mtllib") // mtl file
