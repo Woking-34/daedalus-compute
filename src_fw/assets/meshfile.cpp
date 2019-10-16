@@ -1282,6 +1282,14 @@ void MeshFile::setColorVec(float r, float g, float b)
 
 void MeshFile::add(const MeshFile& meshdata, const Mat44f& mat)
 {
+	// only merge same type - quads qith quads, tris with tris
+	// FIX triangulate()
+	if (primType == MESHPRIM_TYPE_NOTSET)
+	{
+		primType = meshdata.primType;
+		numVertsPrim = meshdata.numVertsPrim;
+	}
+
 	std::vector< Vec4f > position0VecToAdd = meshdata.position0Vec;
 	for(unsigned int i = 0; i < position0VecToAdd.size(); ++i)
 	{
@@ -1305,9 +1313,6 @@ void MeshFile::add(const MeshFile& meshdata, const Mat44f& mat)
 		indicesVecFlatToAdd[i] = indicesVecFlatToAdd[i] + (unsigned int)numVertices;
 	}
 	indicesVecFlat.insert( indicesVecFlat.end(), indicesVecFlatToAdd.begin(), indicesVecFlatToAdd.end() );
-
-	primType = MESHPRIM_TYPE_TRIS;
-	numVertsPrim = 3;
 
 	numVertices = (unsigned int)position0Vec.size();
 	numPrimitives = (unsigned int)indicesVecFlat.size() / numVertsPrim;
@@ -1362,40 +1367,62 @@ void MeshFile::addParallelogram(const Vec4f& anchor, const Vec4f& offset1, const
 
 void MeshFile::triangulate()
 {
-	primType = MESHPRIM_TYPE_TRIS;
-	numVertsPrim = 3;
-
-	int numQuads = 0;
-	std::vector< std::vector<unsigned int> > indicesVecNew;
-
-	for(size_t i = 0; i < indicesVec.size(); ++i)
+	if (indicesVec.size())
 	{
-		if(indicesVec[i].size() == 3)
+		std::vector< std::vector<unsigned int> > indicesVecNew;
+
+		for (size_t i = 0; i < indicesVec.size(); ++i)
 		{
-			indicesVecNew.push_back(indicesVec[i]);
+			if (indicesVec[i].size() == 3)
+			{
+				indicesVecNew.push_back(indicesVec[i]);
+			}
+			else if (indicesVec[i].size() == 4)
+			{
+				std::vector< unsigned int > tri0;
+				std::vector< unsigned int > tri1;
+
+				tri0.push_back(indicesVec[i][0]);
+				tri0.push_back(indicesVec[i][1]);
+				tri0.push_back(indicesVec[i][2]);
+
+				tri1.push_back(indicesVec[i][0]);
+				tri1.push_back(indicesVec[i][2]);
+				tri1.push_back(indicesVec[i][3]);
+
+				indicesVecNew.push_back(tri0);
+				indicesVecNew.push_back(tri1);
+			}
 		}
-		else if(indicesVec[i].size() == 4)
-		{
-			++numQuads;
 
-			std::vector< unsigned int > tri0;
-			std::vector< unsigned int > tri1;
-			
-			tri0.push_back( indicesVec[i][0] );
-			tri0.push_back( indicesVec[i][1] );
-			tri0.push_back( indicesVec[i][2] );
+		indicesVec = indicesVecNew;
+		numPrimitives = (unsigned int)indicesVec.size();
 
-			tri1.push_back( indicesVec[i][2] );
-			tri1.push_back( indicesVec[i][3] );
-			tri1.push_back( indicesVec[i][0] );
-
-			indicesVecNew.push_back(tri0);
-			indicesVecNew.push_back(tri1);
-		}
+		primType = MESHPRIM_TYPE_TRIS;
+		numVertsPrim = 3;
 	}
 
-	indicesVec = indicesVecNew;
-	numPrimitives = (unsigned int)indicesVec.size();
+	if (indicesVecFlat.size() && primType == MESHPRIM_TYPE_QUADS)
+	{
+		std::vector< unsigned int > indicesVecNew;
+
+		for (size_t i = 0; i < indicesVecFlat.size() / 4; ++i)
+		{
+			indicesVecNew.push_back(indicesVecFlat[4 * i] + 0);
+			indicesVecNew.push_back(indicesVecFlat[4 * i] + 1);
+			indicesVecNew.push_back(indicesVecFlat[4 * i] + 2);
+
+			indicesVecNew.push_back(indicesVecFlat[4 * i] + 0);
+			indicesVecNew.push_back(indicesVecFlat[4 * i] + 2);
+			indicesVecNew.push_back(indicesVecFlat[4 * i] + 3);
+		}
+
+		indicesVecFlat = indicesVecNew;
+		numPrimitives = (unsigned int)indicesVecNew.size() / 3;
+
+		primType = MESHPRIM_TYPE_TRIS;
+		numVertsPrim = 3;
+	}
 }
 
 void MeshFile::tesselate()
