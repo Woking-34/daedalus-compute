@@ -17,6 +17,11 @@
 #include "include/NvFlexDevice.h"
 
 #include "maths.h"
+
+#include "mesh.h"
+#include "voxelize.h"
+#include "sdf.h"
+
 #include "perlin.h"
 
 #include <utility>
@@ -32,6 +37,10 @@ std::vector<daedalus::Vec4f> initPos;
 std::vector<daedalus::Vec4f> clothTriPos;
 std::vector<daedalus::Vec4f> clothTriCol;
 std::vector<int> clothTriIndices;
+
+std::vector<float> meshTriPos;
+std::vector<daedalus::Vec4f> meshTriCol;
+std::vector<unsigned int> meshTriIndices;
 
 int g_frame = 0;
 int g_numSubsteps = 2;
@@ -85,6 +94,13 @@ int g_maxNeighborsPerParticle;
 int g_numExtraParticles;
 int g_numExtraMultiplier = 1;
 int g_maxContactsPerParticle;
+
+// mesh used for deformable object rendering
+Mesh* g_mesh;
+std::vector<int> g_meshSkinIndices;
+std::vector<float> g_meshSkinWeights;
+std::vector<Point3> g_meshRestPositions;
+const int g_numSkinWeights = 4;
 
 struct SimBuffers
 {
@@ -328,6 +344,34 @@ void DestroyBuffers(SimBuffers* buffers)
 	delete buffers;
 }
 
+float SampleSDF(const float* sdf, int dim, int x, int y, int z)
+{
+	assert(x < dim && x >= 0);
+	assert(y < dim && y >= 0);
+	assert(z < dim && z >= 0);
+
+	return sdf[z*dim*dim + y * dim + x];
+}
+
+// return normal of signed distance field
+Vec3 SampleSDFGrad(const float* sdf, int dim, int x, int y, int z)
+{
+	int x0 = std::max(x - 1, 0);
+	int x1 = std::min(x + 1, dim - 1);
+
+	int y0 = std::max(y - 1, 0);
+	int y1 = std::min(y + 1, dim - 1);
+
+	int z0 = std::max(z - 1, 0);
+	int z1 = std::min(z + 1, dim - 1);
+
+	float dx = (SampleSDF(sdf, dim, x1, y, z) - SampleSDF(sdf, dim, x0, y, z))*(dim*0.5f);
+	float dy = (SampleSDF(sdf, dim, x, y1, z) - SampleSDF(sdf, dim, x, y0, z))*(dim*0.5f);
+	float dz = (SampleSDF(sdf, dim, x, y, z1) - SampleSDF(sdf, dim, x, y, z0))*(dim*0.5f);
+
+	return Vec3(dx, dy, dz);
+}
+
 void GetParticleBounds(Vec3& lower, Vec3& upper)
 {
 	lower = Vec3(FLT_MAX);
@@ -474,6 +518,366 @@ void CreateSpringGrid(Vec3 lower, int dx, int dy, int dz, float radius, int phas
 	}
 }
 
+void CreateParticleShape(const Mesh* srcMesh, Vec3 lower, Vec3 scale, float rotation, float spacing, Vec3 velocity, float invMass, bool rigid, float rigidStiffness, int phase, bool skin, float jitter = 0.005f, Vec3 skinOffset = 0.0f, float skinExpand = 0.0f, Vec4 color = Vec4(0.0f), float springStiffness = 0.0f)
+{
+	if (rigid && g_buffers->rigidIndices.empty())
+		g_buffers->rigidOffsets.push_back(0);
+
+	if (!srcMesh)
+		return;
+
+	// duplicate mesh
+	Mesh mesh;
+	mesh.AddMesh(*srcMesh);
+
+	int startIndex = int(g_buffers->positions.size());
+
+	{
+		mesh.Transform(RotationMatrix(rotation, Vec3(0.0f, 1.0f, 0.0f)));
+
+		Vec3 meshLower, meshUpper;
+		mesh.GetBounds(meshLower, meshUpper);
+
+		Vec3 edges = meshUpper - meshLower;
+		float maxEdge = std::max(std::max(edges.x, edges.y), edges.z);
+
+		// put mesh at the origin and scale to specified size
+		Matrix44 xform = ScaleMatrix(scale / maxEdge)*TranslationMatrix(Point3(-meshLower));
+
+		mesh.Transform(xform);
+		mesh.GetBounds(meshLower, meshUpper);
+
+		// recompute expanded edges
+		edges = meshUpper - meshLower;
+		maxEdge = std::max(std::max(edges.x, edges.y), edges.z);
+
+		// tweak spacing to avoid edge cases for particles laying on the boundary
+		// just covers the case where an edge is a whole multiple of the spacing.
+		float spacingEps = spacing * (1.0f - 1e-4f);
+
+		// make sure to have at least one particle in each dimension
+		int dx, dy, dz;
+		dx = spacing > edges.x ? 1 : int(edges.x / spacingEps);
+		dy = spacing > edges.y ? 1 : int(edges.y / spacingEps);
+		dz = spacing > edges.z ? 1 : int(edges.z / spacingEps);
+
+		int maxDim = std::max(std::max(dx, dy), dz);
+
+		// expand border by two voxels to ensure adequate sampling at edges
+		meshLower -= 2.0f*Vec3(spacing);
+		meshUpper += 2.0f*Vec3(spacing);
+		maxDim += 4;
+
+		std::vector<uint32_t> voxels(maxDim*maxDim*maxDim);
+
+		// we shift the voxelization bounds so that the voxel centers
+		// lie symmetrically to the center of the object. this reduces the 
+		// chance of missing features, and also better aligns the particles
+		// with the mesh
+		Vec3 meshOffset;
+		meshOffset.x = 0.5f * (spacing - (edges.x - (dx - 1)*spacing));
+		meshOffset.y = 0.5f * (spacing - (edges.y - (dy - 1)*spacing));
+		meshOffset.z = 0.5f * (spacing - (edges.z - (dz - 1)*spacing));
+		meshLower -= meshOffset;
+
+		//Voxelize(*mesh, dx, dy, dz, &voxels[0], meshLower - Vec3(spacing*0.05f) , meshLower + Vec3(maxDim*spacing) + Vec3(spacing*0.05f));
+		Voxelize((const Vec3*)&mesh.m_positions[0], mesh.m_positions.size(), (const int*)&mesh.m_indices[0], mesh.m_indices.size(), maxDim, maxDim, maxDim, &voxels[0], meshLower, meshLower + Vec3(maxDim*spacing));
+
+		std::vector<int> indices(maxDim*maxDim*maxDim);
+		std::vector<float> sdf(maxDim*maxDim*maxDim);
+		MakeSDF(&voxels[0], maxDim, maxDim, maxDim, &sdf[0]);
+
+		for (int x = 0; x < maxDim; ++x)
+		{
+			for (int y = 0; y < maxDim; ++y)
+			{
+				for (int z = 0; z < maxDim; ++z)
+				{
+					const int index = z * maxDim*maxDim + y * maxDim + x;
+
+					// if voxel is marked as occupied the add a particle
+					if (voxels[index])
+					{
+						if (rigid)
+							g_buffers->rigidIndices.push_back(int(g_buffers->positions.size()));
+
+						Vec3 position = lower + meshLower + spacing * Vec3(float(x) + 0.5f, float(y) + 0.5f, float(z) + 0.5f) + RandomUnitVector()*jitter;
+
+						// normalize the sdf value and transform to world scale
+						Vec3 n = SafeNormalize(SampleSDFGrad(&sdf[0], maxDim, x, y, z));
+						float d = sdf[index] * maxEdge;
+
+						if (rigid)
+							g_buffers->rigidLocalNormals.push_back(Vec4(n, d));
+
+						// track which particles are in which cells
+						indices[index] = g_buffers->positions.size();
+
+						g_buffers->positions.push_back(Vec4(position.x, position.y, position.z, invMass));
+						g_buffers->velocities.push_back(velocity);
+						g_buffers->phases.push_back(phase);
+
+						initPos.push_back(daedalus::Vec4f(position.x, position.y, position.z, 1.0f));
+						initCol.push_back(daedalus::Vec4f(color.x, color.y, color.z, 1.0f));
+					}
+				}
+			}
+		}
+		mesh.Transform(ScaleMatrix(1.0f + skinExpand)*TranslationMatrix(Point3(-0.5f*(meshUpper + meshLower))));
+		mesh.Transform(TranslationMatrix(Point3(lower + 0.5f*(meshUpper + meshLower))));
+
+
+		if (springStiffness > 0.0f)
+		{
+			// construct cross link springs to occupied cells
+			for (int x = 0; x < maxDim; ++x)
+			{
+				for (int y = 0; y < maxDim; ++y)
+				{
+					for (int z = 0; z < maxDim; ++z)
+					{
+						const int centerCell = z * maxDim*maxDim + y * maxDim + x;
+
+						// if voxel is marked as occupied the add a particle
+						if (voxels[centerCell])
+						{
+							const int width = 1;
+
+							// create springs to all the neighbors within the width
+							for (int i = x - width; i <= x + width; ++i)
+							{
+								for (int j = y - width; j <= y + width; ++j)
+								{
+									for (int k = z - width; k <= z + width; ++k)
+									{
+										const int neighborCell = k * maxDim*maxDim + j * maxDim + i;
+
+										if (neighborCell > 0 && neighborCell < int(voxels.size()) && voxels[neighborCell] && neighborCell != centerCell)
+										{
+											CreateSpring(indices[neighborCell], indices[centerCell], springStiffness);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+	}
+
+
+	if (skin)
+	{
+		g_buffers->rigidMeshSize.push_back(mesh.GetNumVertices());
+
+		int startVertex = 0;
+
+		if (!g_mesh)
+			g_mesh = new Mesh();
+
+		// append to mesh
+		startVertex = g_mesh->GetNumVertices();
+
+		g_mesh->Transform(TranslationMatrix(Point3(skinOffset)));
+		g_mesh->AddMesh(mesh);
+
+		const Colour colors[7] =
+		{
+			Colour(0.0f, 0.5f, 1.0f),
+			Colour(0.797f, 0.354f, 0.000f),
+			Colour(0.000f, 0.349f, 0.173f),
+			Colour(0.875f, 0.782f, 0.051f),
+			Colour(0.01f, 0.170f, 0.453f),
+			Colour(0.673f, 0.111f, 0.000f),
+			Colour(0.612f, 0.194f, 0.394f)
+		};
+
+		for (uint32_t i = startVertex; i < g_mesh->GetNumVertices(); ++i)
+		{
+			int indices[g_numSkinWeights] = { -1, -1, -1, -1 };
+			float distances[g_numSkinWeights] = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
+
+			if (LengthSq(color) == 0.0f)
+				g_mesh->m_colours[i] = 1.25f*colors[((unsigned int)(phase)) % 7];
+			else
+				g_mesh->m_colours[i] = Colour(color);
+
+			// find closest n particles
+			for (int j = startIndex; j < g_buffers->positions.size(); ++j)
+			{
+				float dSq = LengthSq(Vec3(g_mesh->m_positions[i]) - Vec3(g_buffers->positions[j]));
+
+				// insertion sort
+				int w = 0;
+				for (; w < 4; ++w)
+					if (dSq < distances[w])
+						break;
+
+				if (w < 4)
+				{
+					// shuffle down
+					for (int s = 3; s > w; --s)
+					{
+						indices[s] = indices[s - 1];
+						distances[s] = distances[s - 1];
+					}
+
+					distances[w] = dSq;
+					indices[w] = int(j);
+				}
+			}
+
+			// weight particles according to distance
+			float wSum = 0.0f;
+
+			for (int w = 0; w < 4; ++w)
+			{
+				// convert to inverse distance
+				distances[w] = 1.0f / (0.1f + powf(distances[w], .125f));
+
+				wSum += distances[w];
+
+			}
+
+			float weights[4];
+			for (int w = 0; w < 4; ++w)
+				weights[w] = distances[w] / wSum;
+
+			for (int j = 0; j < 4; ++j)
+			{
+				g_meshSkinIndices.push_back(indices[j]);
+				g_meshSkinWeights.push_back(weights[j]);
+			}
+		}
+	}
+
+	if (rigid)
+	{
+		g_buffers->rigidCoefficients.push_back(rigidStiffness);
+		g_buffers->rigidOffsets.push_back(int(g_buffers->rigidIndices.size()));
+	}
+}
+
+// wrapper to create shape from a filename
+void CreateParticleShape(const char* filename, Vec3 lower, Vec3 scale, float rotation, float spacing, Vec3 velocity, float invMass, bool rigid, float rigidStiffness, int phase, bool skin, float jitter = 0.005f, Vec3 skinOffset = 0.0f, float skinExpand = 0.0f, Vec4 color = Vec4(0.0f), float springStiffness = 0.0f)
+{
+	Mesh* mesh = ImportMesh(filename);
+	if (mesh)
+		CreateParticleShape(mesh, lower, scale, rotation, spacing, velocity, invMass, rigid, rigidStiffness, phase, skin, jitter, skinOffset, skinExpand, color, springStiffness);
+
+	delete mesh;
+}
+
+// calculates the center of mass of every rigid given a set of particle positions and rigid indices
+void CalculateRigidCentersOfMass(const Vec4* restPositions, int numRestPositions, const int* offsets, Vec3* translations, const int* indices, int numRigids)
+{
+	// To improve the accuracy of the result, first transform the restPositions to relative coordinates (by finding the mean and subtracting that from all positions)
+	// Note: If this is not done, one might see ghost forces if the mean of the restPositions is far from the origin.
+	Vec3 shapeOffset(0.0f);
+
+	for (int i = 0; i < numRestPositions; i++)
+	{
+		shapeOffset += Vec3(restPositions[i]);
+	}
+
+	shapeOffset /= float(numRestPositions);
+
+	for (int i = 0; i < numRigids; ++i)
+	{
+		const int startIndex = offsets[i];
+		const int endIndex = offsets[i + 1];
+
+		const int n = endIndex - startIndex;
+
+		assert(n);
+
+		Vec3 com;
+
+		for (int j = startIndex; j < endIndex; ++j)
+		{
+			const int r = indices[j];
+
+			// By subtracting shapeOffset the calculation is done in relative coordinates
+			com += Vec3(restPositions[r]) - shapeOffset;
+		}
+
+		com /= float(n);
+
+		// Add the shapeOffset to switch back to absolute coordinates
+		com += shapeOffset;
+
+		translations[i] = com;
+
+	}
+}
+
+// calculates local space positions given a set of particle positions, rigid indices and centers of mass of the rigids
+void CalculateRigidLocalPositions(const Vec4* restPositions, const int* offsets, const Vec3* translations, const int* indices, int numRigids, Vec3* localPositions)
+{
+	int count = 0;
+
+	for (int i = 0; i < numRigids; ++i)
+	{
+		const int startIndex = offsets[i];
+		const int endIndex = offsets[i + 1];
+
+		assert(endIndex - startIndex);
+
+		for (int j = startIndex; j < endIndex; ++j)
+		{
+			const int r = indices[j];
+
+			localPositions[count++] = Vec3(restPositions[r]) - translations[i];
+		}
+	}
+}
+
+void SkinMesh()
+{
+	if (g_mesh)
+	{
+		int startVertex = 0;
+
+		for (int r = 0; r < g_buffers->rigidRotations.size(); ++r)
+		{
+			const Matrix33 rotation = g_buffers->rigidRotations[r];
+			const int numVertices = g_buffers->rigidMeshSize[r];
+
+			for (int i = startVertex; i < numVertices + startVertex; ++i)
+			{
+				Vec3 skinPos;
+
+				for (int w = 0; w < 4; ++w)
+				{
+					// small shapes can have < 4 particles
+					if (g_meshSkinIndices[i * 4 + w] > -1)
+					{
+						assert(g_meshSkinWeights[i * 4 + w] < FLT_MAX);
+
+						int index = g_meshSkinIndices[i * 4 + w];
+						float weight = g_meshSkinWeights[i * 4 + w];
+
+						skinPos += (rotation*(g_meshRestPositions[i] - Point3(g_buffers->restPositions[index])) + Vec3(g_buffers->positions[index]))*weight;
+					}
+				}
+
+				g_mesh->m_positions[i] = Point3(skinPos);
+			}
+
+			startVertex += numVertices;
+		}
+
+		g_mesh->CalculateNormals();
+	}
+}
+
+void SetFillMode(bool wireframe)
+{
+	glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
+}
+
 #include "scenes.h"
 
 class DamBreak : public Scene
@@ -603,6 +1007,70 @@ public:
 	}
 };
 
+class BananaPile : public Scene
+{
+public:
+
+	BananaPile(const char* name) : Scene(name)
+	{
+	}
+
+	virtual void Initialize()
+	{
+		float s = 1.0f;
+
+		g_params.radius *= 0.5f;
+
+		Vec3 lower(0.0f, 1.0f + g_params.radius*0.25f, 0.0f);
+
+		int dimx = 3;
+		int dimy = 40;
+		int dimz = 2;
+
+		float radius = g_params.radius;
+		int group = 0;
+
+		std::string meshPath = "assets/banana.obj";
+		bool isFoundSource = findFullPath(meshPath);
+
+		// create a basic grid
+		for (int x = 0; x < dimx; ++x)
+		{
+			for (int y = 0; y < dimy; ++y)
+			{
+				for (int z = 0; z < dimz; ++z)
+				{
+					CreateParticleShape(meshPath.c_str(), lower + (s*1.1f)*Vec3(float(x), y*0.4f, float(z)), Vec3(s), 0.0f, radius*0.95f, Vec3(0.0f), 1.0f, true, 0.8f, NvFlexMakePhase(group++, 0), true, radius*0.1f, 0.0f, 0.0f, 1.25f*Vec4(0.875f, 0.782f, 0.051f, 1.0f));
+				}
+			}
+		}
+
+		//AddPlinth();
+
+		g_numSubsteps = 3;
+		g_params.numIterations = 2;
+
+		g_params.radius *= 1.0f;
+		g_params.dynamicFriction = 0.25f;
+		g_params.dissipation = 0.03f;
+		g_params.particleCollisionMargin = g_params.radius*0.05f;
+		g_params.sleepThreshold = g_params.radius*0.2f;
+		g_params.shockPropagation = 2.5f;
+		g_params.restitution = 0.55f;
+		g_params.damping = 0.25f;
+
+		// draw options
+		//g_drawPoints = false;
+
+		//g_emitters[0].mEnabled = true;
+		//g_emitters[0].mSpeed = (g_params.radius*2.0f / g_dt);
+	}
+
+	virtual void Update()
+	{
+	}
+};
+
 class Scene;
 std::vector<Scene*> g_scenes;
 
@@ -665,13 +1133,18 @@ public:
 #ifdef flex_flagcloth
 		g_scenes.push_back(new FlagCloth("Flag Cloth"));
 #endif
+#ifdef flex_bananas
+		g_scenes.push_back(new BananaPile("Bananas"));
+#endif
+
 		NvFlexInitDesc desc;
 		desc.deviceIndex = g_device;
 		desc.enableExtensions = g_extensions;
 		desc.renderDevice = 0;
 		desc.renderContext = 0;
 		desc.computeContext = 0;
-		desc.computeType = eNvFlexCUDA;
+		//desc.computeType = eNvFlexCUDA;
+		desc.computeType = eNvFlexD3D11;
 
 		// Init Flex library, note that no CUDA methods should be called before this 
 		// point to ensure we get the device context we want
@@ -724,8 +1197,8 @@ public:
 			g_buffers->triangleNormals.resize(0);
 			g_buffers->uvs.resize(0);
 
-			//g_meshSkinIndices.resize(0);
-			//g_meshSkinWeights.resize(0);
+			g_meshSkinIndices.resize(0);
+			g_meshSkinWeights.resize(0);
 
 			//g_emitters.resize(1);
 			//g_emitters[0].mEnabled = false;
@@ -942,6 +1415,16 @@ public:
 			for (int i = 0; i < int(maxParticles); ++i)
 				g_buffers->normals[i] = Vec4(SafeNormalize(Vec3(g_buffers->normals[i]), Vec3(0.0f, 1.0f, 0.0f)), 0.0f);
 
+			// save mesh positions for skinning
+			if (g_mesh)
+			{
+				g_meshRestPositions = g_mesh->m_positions;
+			}
+			else
+			{
+				g_meshRestPositions.resize(0);
+			}
+
 			g_solverDesc.maxParticles = maxParticles;
 			g_solverDesc.maxDiffuseParticles = g_maxDiffuseParticles;
 			g_solverDesc.maxNeighborsPerParticle = g_maxNeighborsPerParticle;
@@ -973,6 +1456,29 @@ public:
 			for (int i = 0; i < g_buffers->positions.size(); ++i)
 				g_buffers->restPositions[i] = g_buffers->positions[i];
 
+			// builds rigids constraints
+			if (g_buffers->rigidOffsets.size())
+			{
+				assert(g_buffers->rigidOffsets.size() > 1);
+
+				const int numRigids = g_buffers->rigidOffsets.size() - 1;
+
+				// If the centers of mass for the rigids are not yet computed, this is done here
+				// (If the CreateParticleShape method is used instead of the NvFlexExt methods, the centers of mass will be calculated here)
+				if (g_buffers->rigidTranslations.size() == 0)
+				{
+					g_buffers->rigidTranslations.resize(g_buffers->rigidOffsets.size() - 1, Vec3());
+					CalculateRigidCentersOfMass(&g_buffers->positions[0], g_buffers->positions.size(), &g_buffers->rigidOffsets[0], &g_buffers->rigidTranslations[0], &g_buffers->rigidIndices[0], numRigids);
+				}
+
+				// calculate local rest space positions
+				g_buffers->rigidLocalPositions.resize(g_buffers->rigidOffsets.back());
+				CalculateRigidLocalPositions(&g_buffers->positions[0], &g_buffers->rigidOffsets[0], &g_buffers->rigidTranslations[0], &g_buffers->rigidIndices[0], numRigids, &g_buffers->rigidLocalPositions[0]);
+
+				// set rigidRotations to correct length, probably NULL up until here
+				g_buffers->rigidRotations.resize(g_buffers->rigidOffsets.size() - 1, Quat());
+			}
+
 			// unmap so we can start transferring data to GPU
 			UnmapBuffers(g_buffers);
 
@@ -1003,6 +1509,12 @@ public:
 				NvFlexSetSprings(g_solver, g_buffers->springIndices.buffer, g_buffers->springLengths.buffer, g_buffers->springStiffness.buffer, g_buffers->springLengths.size());
 			}
 
+			// rigids
+			if (g_buffers->rigidOffsets.size())
+			{
+				NvFlexSetRigids(g_solver, g_buffers->rigidOffsets.buffer, g_buffers->rigidIndices.buffer, g_buffers->rigidLocalPositions.buffer, g_buffers->rigidLocalNormals.buffer, g_buffers->rigidCoefficients.buffer, g_buffers->rigidPlasticThresholds.buffer, g_buffers->rigidPlasticCreeps.buffer, g_buffers->rigidRotations.buffer, g_buffers->rigidTranslations.buffer, g_buffers->rigidOffsets.size() - 1, g_buffers->rigidIndices.size());
+			}
+
 			// dynamic triangles
 			if (g_buffers->triangles.size())
 			{
@@ -1023,6 +1535,8 @@ public:
 				//UpdateMouse();
 				UpdateWind();
 				UpdateScene();
+
+				SkinMesh();
 
 				{
 					glBindBuffer(GL_ARRAY_BUFFER, vboPos);
@@ -1049,6 +1563,16 @@ public:
 						c.y = std::fabs(c.y);
 						c.z = std::fabs(c.z);
 					}
+				}
+
+				if(g_mesh)
+				{
+					meshTriPos.resize(g_mesh->m_positions.size()*3);
+					meshTriCol.resize(g_mesh->m_positions.size(), 1.25f*daedalus::Vec4f(0.875f, 0.782f, 0.051f, 1.0f));
+					meshTriIndices.resize(g_mesh->m_indices.size());
+
+					memcpy(&meshTriPos[0], &g_mesh->m_positions[0], g_mesh->m_positions.size() * 3 * sizeof(float));
+					memcpy(&meshTriIndices[0], &g_mesh->m_indices[0], g_mesh->m_indices.size() * sizeof(unsigned int));
 				}
 			}
 
@@ -1085,6 +1609,10 @@ public:
 			// readback triangle normals
 			if (g_buffers->triangles.size())
 				NvFlexGetDynamicTriangles(g_solver, g_buffers->triangles.buffer, g_buffers->triangleNormals.buffer, g_buffers->triangles.size() / 3);
+
+			// readback rigid transforms
+			if (g_buffers->rigidOffsets.size())
+				NvFlexGetRigids(g_solver, NULL, NULL, NULL, NULL, NULL, NULL, NULL, g_buffers->rigidRotations.buffer, g_buffers->rigidTranslations.buffer);
 		}
 	}
 

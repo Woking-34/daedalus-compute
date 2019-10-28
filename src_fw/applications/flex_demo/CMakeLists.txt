@@ -18,14 +18,18 @@ macro(create_flex APP_NAME)
 	
 	target_include_directories(${APP_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Flex )
 	
-	target_link_libraries(${APP_NAME} debug ${CMAKE_CURRENT_SOURCE_DIR}/../Flex/lib/win64/NvFlexDebugCUDA_x64.lib)
+	target_link_libraries(${APP_NAME} debug ${CMAKE_CURRENT_SOURCE_DIR}/../Flex/lib/win64/NvFlexDebugD3D_x64.lib)
+	target_link_libraries(${APP_NAME} debug ${CMAKE_CURRENT_SOURCE_DIR}/../Flex/lib/win64/NvFlexExtDebugD3D_x64.lib)
+	#target_link_libraries(${APP_NAME} debug ${CMAKE_CURRENT_SOURCE_DIR}/../Flex/lib/win64/NvFlexDebugCUDA_x64.lib)
+	#target_link_libraries(${APP_NAME} debug ${CMAKE_CURRENT_SOURCE_DIR}/../Flex/lib/win64/NvFlexExtDebugCUDA_x64.lib)
 	target_link_libraries(${APP_NAME} debug ${CMAKE_CURRENT_SOURCE_DIR}/../Flex/lib/win64/NvFlexDeviceDebug_x64.lib)
-	target_link_libraries(${APP_NAME} debug ${CMAKE_CURRENT_SOURCE_DIR}/../Flex/lib/win64/NvFlexExtDebugCUDA_x64.lib)
 	
-	target_link_libraries(${APP_NAME} optimized ${CMAKE_CURRENT_SOURCE_DIR}/../Flex/lib/win64/NvFlexReleaseCUDA_x64.lib)
+	target_link_libraries(${APP_NAME} optimized ${CMAKE_CURRENT_SOURCE_DIR}/../Flex/lib/win64/NvFlexReleaseD3D_x64.lib)
+	target_link_libraries(${APP_NAME} optimized ${CMAKE_CURRENT_SOURCE_DIR}/../Flex/lib/win64/NvFlexExtReleaseD3D_x64.lib)
+	#target_link_libraries(${APP_NAME} optimized ${CMAKE_CURRENT_SOURCE_DIR}/../Flex/lib/win64/NvFlexReleaseCUDA_x64.lib)
+	#target_link_libraries(${APP_NAME} optimized ${CMAKE_CURRENT_SOURCE_DIR}/../Flex/lib/win64/NvFlexExtReleaseCUDA_x64.lib)
 	target_link_libraries(${APP_NAME} optimized ${CMAKE_CURRENT_SOURCE_DIR}/../Flex/lib/win64/NvFlexDeviceRelease_x64.lib)
-	target_link_libraries(${APP_NAME} optimized ${CMAKE_CURRENT_SOURCE_DIR}/../Flex/lib/win64/NvFlexExtReleaseCUDA_x64.lib)
-	
+
 	MESSAGE(STATUS "Project added: " ${APP_NAME})
 	
 	source_group("${APP_NAME}" FILES ${APP_SRC})
@@ -61,7 +65,20 @@ SET(SRC_APP_FLEX
 
 	../perlin.h
 	../perlin.cpp
+	
+	../mesh.h
+	../mesh.cpp
+
+	../sdf.h
+	../sdf.cpp
+	
+	../aabbtree.h
+	../aabbtree.cpp
+	
+	../voxelize.h
+	../voxelize.cpp
 )
 
+ADD_SUBDIRECTORY(flex_bananas)
 ADD_SUBDIRECTORY(flex_dambreak)
 ADD_SUBDIRECTORY(flex_flagcloth)

@@ -146,6 +146,34 @@ void App::Render()
 		glDisableClientState(GL_COLOR_ARRAY);
 	}
 
+	// draw rigid
+	if (g_mesh)
+	{
+		SetFillMode(true);
+
+		glMatrixMode(GL_PROJECTION);
+		glLoadMatrixf(mainCamera.projMat);
+
+		glMatrixMode(GL_MODELVIEW);
+		glLoadMatrixf(mainCamera.viewMat);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glEnableClientState(GL_COLOR_ARRAY);
+
+		glVertexPointer(3, GL_FLOAT, sizeof(float) * 3, &meshTriPos[0]);
+		glColorPointer(4, GL_FLOAT, sizeof(float) * 4, &meshTriCol[0]);
+
+		glDrawElements(GL_TRIANGLES, g_mesh->m_indices.size(), GL_UNSIGNED_INT, &meshTriIndices[0]);
+
+		glDisableClientState(GL_VERTEX_ARRAY);
+		glDisableClientState(GL_COLOR_ARRAY);
+
+		SetFillMode(false);
+	}
+
 	{
 		renderProgram_BBox.useProgram();
 
@@ -212,11 +240,13 @@ void App::Terminate()
 
 std::string App::GetName()
 {
+#ifdef flex_bananas
+	return std::string("flex_bananas");
+#endif
 #ifdef flex_dambreak
 	return std::string("flex_dambreak");
 #endif
 #ifdef flex_flagcloth
 	return std::string("flex_flagcloth");
 #endif
-	
 }
