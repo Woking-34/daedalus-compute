@@ -27,6 +27,9 @@ Tiny collection of compute demos, no wrapper around the compute APIs, tested on 
 ## NVIDIA FleX Demo - FlagCloth
 <p align="center"><img src="docs/flex_flagcloth.jpg" width="800" /></p>
 
+## OpenGL samples
+<p align="center"><img src="docs/ogl_samples.jpg" width="800" /></p>
+
 ## OpenCL platform and deivce info for Intel i7-6770HQ  + Iris Pro Graphics 580
 ```
 PLATFORM #0

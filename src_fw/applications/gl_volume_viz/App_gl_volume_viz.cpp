@@ -437,6 +437,8 @@ void App::Initialize()
 	mainCamera.setProjParams( 60.0f, (float)(currWidth)/(float)(currHeight), 0.15f, 100.0f );
 	mainCamera.updateRays();
 
+	appCamera = &mainCamera;
+
 	albedoProgram.addFile("albedo_vertcolor.vert", GL_VERTEX_SHADER);
 	albedoProgram.addFile("albedo_vertcolor.frag", GL_FRAGMENT_SHADER);
 	albedoProgram.buildProgram();
@@ -634,55 +636,6 @@ void App::Update()
 
 		//std::cout << isoLevel << std::endl;
 	}
-
-	float translationScale = 0.0015f * delta_time;
-	float rotationScale = 0.0015f;
-
-	if( normalKeyState['w'] || normalKeyState['W'] )
-	{
-		mainCamera.updateTranslationForwardBackward(-translationScale);
-	}
-			
-	if( normalKeyState['s'] || normalKeyState['S'] )
-	{
-		mainCamera.updateTranslationForwardBackward(translationScale);
-	}
-	
-	if( normalKeyState['a'] || normalKeyState['A'] )
-	{
-		mainCamera.updateTranslationLeftRight(-translationScale);
-	}
-
-	if( normalKeyState['d'] || normalKeyState['D'] )
-	{
-		mainCamera.updateTranslationLeftRight(translationScale);
-	}
-
-	if( normalKeyState['q'] || normalKeyState['Q'] )
-	{
-		mainCamera.updateTranslationUpDown(-translationScale);
-	}
-
-	if( normalKeyState['e'] || normalKeyState['E'] )
-	{
-		mainCamera.updateTranslationUpDown(translationScale);
-	}
-
-	if( mouseState[GLUT_LEFT_BUTTON] )
-	{
-		if(mouseX_old != -1 && mouseY_old != -1)
-		{
-			mainCamera.updateRotation(rotationScale * (mouseX - mouseX_old), rotationScale * (mouseY - mouseY_old), 0.0f);
-		}
-
-		mouseX_old = mouseX;
-		mouseY_old = mouseY;
-	}
-	else
-	{
-		mouseX_old = -1,
-		mouseY_old = -1;
-	}
 }
 
 void App::Render()
@@ -807,12 +760,6 @@ void App::Render()
 		glUseProgram(0);
 
 		CHECK_GL;
-	}
-
-	// render volume with view aligned slices
-	if(0)
-	{
-
 	}
 
 	// render volume with axis aligned slices

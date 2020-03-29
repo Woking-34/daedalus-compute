@@ -26,7 +26,7 @@ public:
 	virtual std::string GetName();
 
 protected:
-	daedalus::Camera myCamera;
+	daedalus::Camera mainCamera;
 	daedalus::Vec4f camEye, camCenter, camUp;
 	float camFOV, camNear, camFar;
 

@@ -40,9 +40,11 @@ App::~App()
 
 void App::Initialize()
 {
-	myCamera.setViewParams( camEye, camCenter, camUp );
-	myCamera.setProjParams( camFOV, (float)(currWidth)/(float)(currHeight), camNear, camFar );
-	myCamera.updateRays();
+	mainCamera.setViewParams( camEye, camCenter, camUp );
+	mainCamera.setProjParams( camFOV, (float)(currWidth)/(float)(currHeight), camNear, camFar );
+	mainCamera.updateRays();
+
+	appCamera = &mainCamera;
 
 	{
 		MeshFile myMeshFile0;
@@ -215,7 +217,7 @@ void App::Update()
 		memset(sceneSelcet, 0, sizeof(sceneSelcet));
 		sceneSelcet[0] = 1;
 
-		myCamera.setViewParams( camInitPos[0], camCenter, camUp );
+		mainCamera.setViewParams( camInitPos[0], camCenter, camUp );
 	}
 
 	if(specialKeyState[GLUT_KEY_F2])
@@ -225,7 +227,7 @@ void App::Update()
 		memset(sceneSelcet, 0, sizeof(sceneSelcet));
 		sceneSelcet[1] = 1;
 
-		myCamera.setViewParams( camInitPos[1], camCenter, camUp );
+		mainCamera.setViewParams( camInitPos[1], camCenter, camUp );
 	}
 
 	if(specialKeyState[GLUT_KEY_F3])
@@ -235,63 +237,14 @@ void App::Update()
 		memset(sceneSelcet, 0, sizeof(sceneSelcet));
 		sceneSelcet[2] = 1;
 
-		myCamera.setViewParams( camInitPos[2], camCenter, camUp );
-	}
-
-	float translationScale = 0.0035f;
-	float rotationScale = 0.0015f;
-
-	if( normalKeyState['w'] || normalKeyState['W'] )
-	{
-		myCamera.updateTranslationForwardBackward(-translationScale);
-	}
-
-	if( normalKeyState['s'] || normalKeyState['S'] )
-	{
-		myCamera.updateTranslationForwardBackward(translationScale);
-	}
-
-	if( normalKeyState['a'] || normalKeyState['A'] )
-	{
-		myCamera.updateTranslationLeftRight(-translationScale);
-	}
-
-	if( normalKeyState['d'] || normalKeyState['D'] )
-	{
-		myCamera.updateTranslationLeftRight(translationScale);
-	}
-
-	if( normalKeyState['q'] || normalKeyState['Q'] )
-	{
-		myCamera.updateTranslationUpDown(-translationScale);
-	}
-
-	if( normalKeyState['e'] || normalKeyState['E'] )
-	{
-		myCamera.updateTranslationUpDown(translationScale);
-	}
-
-	if( mouseState[GLUT_LEFT_BUTTON] )
-	{
-		if(mouseX_old != -1 && mouseY_old != -1)
-		{
-			myCamera.updateRotation(rotationScale * (mouseX - mouseX_old), rotationScale * (mouseY - mouseY_old), 0.0f);
-		}
-
-		mouseX_old = mouseX;
-		mouseY_old = mouseY;
-	}
-	else
-	{
-		mouseX_old = -1,
-		mouseY_old = -1;
+		mainCamera.setViewParams( camInitPos[2], camCenter, camUp );
 	}
 }
 
 void App::Render()
 {
-	myCamera.setProjParams( 60.0f, (float)(currWidth)/(float)(currHeight), 0.25f, 100.0f );
-	myCamera.updateRays();
+	mainCamera.setProjParams( 60.0f, (float)(currWidth)/(float)(currHeight), 0.25f, 100.0f );
+	mainCamera.updateRays();
 
 	glViewport(0, 0, currWidth, currHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -300,13 +253,13 @@ void App::Render()
 	{
 		progAlbedoVertCol.useProgram();
 
-		progAlbedoVertCol.setFloatMatrix44( myCamera.viewMat * myCamera.projMat, "u_MVPMat" );
+		progAlbedoVertCol.setFloatMatrix44(mainCamera.viewMat * mainCamera.projMat, "u_MVPMat" );
 		myMesh.render( progAlbedoVertCol.getAttribLocations() );
 
-		progAlbedoVertCol.setFloatMatrix44(myCamera.viewMat * myCamera.projMat, "u_MVPMat");
+		progAlbedoVertCol.setFloatMatrix44(mainCamera.viewMat * mainCamera.projMat, "u_MVPMat");
 		myMeshWorldAABB.render( progAlbedoVertCol.getAttribLocations() );
 
-		progAlbedoVertCol.setFloatMatrix44(createTranslationMatrix(0.0f, -1.0f, 0.0f) * myCamera.viewMat * myCamera.projMat, "u_MVPMat");
+		progAlbedoVertCol.setFloatMatrix44(createTranslationMatrix(0.0f, -1.0f, 0.0f) * mainCamera.viewMat * mainCamera.projMat, "u_MVPMat");
 		myMeshWorldGrid.render( progAlbedoVertCol.getAttribLocations() );
 
 		glUseProgram(0);
@@ -320,12 +273,12 @@ void App::Render()
 		for(int i = 0; i < 15; ++i)
 		{
 			glBindTexture(GL_TEXTURE_2D, texIds[i]);
-			progAlbedoTexCol.setFloatMatrix44(ballMatrices[i] * myCamera.viewMat * myCamera.projMat, "u_MVPMat");
+			progAlbedoTexCol.setFloatMatrix44(ballMatrices[i] * mainCamera.viewMat * mainCamera.projMat, "u_MVPMat");
 			meshSpherePool.render( progAlbedoTexCol.getAttribLocations() );
 		}
 	
 		glBindTexture(GL_TEXTURE_2D, texIds[15]);
-		progAlbedoTexCol.setFloatMatrix44(createTranslationMatrix(0.0f, -2.0f, -clothSize / 2.0f + ballRad) * myCamera.viewMat * myCamera.projMat, "u_MVPMat");
+		progAlbedoTexCol.setFloatMatrix44(createTranslationMatrix(0.0f, -2.0f, -clothSize / 2.0f + ballRad) * mainCamera.viewMat * mainCamera.projMat, "u_MVPMat");
 		meshGridPool.render( progAlbedoTexCol.getAttribLocations() );
 
 		glUseProgram(0);
@@ -334,7 +287,7 @@ void App::Render()
 	{
 		progAlbedoVertCol.useProgram();
 
-		progAlbedoVertCol.setFloatMatrix44(myCamera.viewMat * myCamera.projMat, "u_MVPMat");
+		progAlbedoVertCol.setFloatMatrix44(mainCamera.viewMat * mainCamera.projMat, "u_MVPMat");
 		meshCornell.render( progAlbedoVertCol.getAttribLocations() );
 
 		glUseProgram(0);

@@ -39,9 +39,11 @@ App::~App()
 
 void App::Initialize()
 {
-	myCamera.setViewParams( camEye, camCenter, camUp );
-	myCamera.setProjParams( camFOV, (float)(currWidth)/(float)(currHeight), camNear, camFar );
-	myCamera.updateRays();
+	mainCamera.setViewParams( camEye, camCenter, camUp );
+	mainCamera.setProjParams( camFOV, (float)(currWidth)/(float)(currHeight), camNear, camFar );
+	mainCamera.updateRays();
+
+	appCamera = &mainCamera;
 	
 	for(int i = startID; i <= finishID; i+=filterID)
 	{
@@ -95,55 +97,6 @@ void App::Initialize()
 
 void App::Update()
 {
-	float translationScale = 0.0035f;
-	float rotationScale = 0.0015f;
-
-	if( normalKeyState['w'] || normalKeyState['W'] )
-	{
-		myCamera.updateTranslationForwardBackward(-translationScale);
-	}
-
-	if( normalKeyState['s'] || normalKeyState['S'] )
-	{
-		myCamera.updateTranslationForwardBackward(translationScale);
-	}
-
-	if( normalKeyState['a'] || normalKeyState['A'] )
-	{
-		myCamera.updateTranslationLeftRight(-translationScale);
-	}
-
-	if( normalKeyState['d'] || normalKeyState['D'] )
-	{
-		myCamera.updateTranslationLeftRight(translationScale);
-	}
-
-	if( normalKeyState['q'] || normalKeyState['Q'] )
-	{
-		myCamera.updateTranslationUpDown(-translationScale);
-	}
-
-	if( normalKeyState['e'] || normalKeyState['E'] )
-	{
-		myCamera.updateTranslationUpDown(translationScale);
-	}
-
-	if( mouseState[GLUT_LEFT_BUTTON] )
-	{
-		if(mouseX_old != -1 && mouseY_old != -1)
-		{
-			myCamera.updateRotation(rotationScale * (mouseX - mouseX_old), rotationScale * (mouseY - mouseY_old), 0.0f);
-		}
-
-		mouseX_old = mouseX;
-		mouseY_old = mouseY;
-	}
-	else
-	{
-		mouseX_old = -1,
-		mouseY_old = -1;
-	}
-
 	if(specialKeyState[GLUT_KEY_LEFT])
 	{
 		--currID;
@@ -163,8 +116,8 @@ void App::Update()
 
 void App::Render()
 {
-	myCamera.setProjParams( 60.0f, (float)(currWidth)/(float)(currHeight), 0.25f, 100.0f );
-	myCamera.updateRays();
+	mainCamera.setProjParams( 60.0f, (float)(currWidth)/(float)(currHeight), 0.25f, 100.0f );
+	mainCamera.updateRays();
 
 	glViewport(0, 0, currWidth, currHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -178,10 +131,10 @@ void App::Render()
 	{
 		progAlbedoVertCol.useProgram();
 
-		progAlbedoVertCol.setFloatMatrix44( myCamera.viewMat * myCamera.projMat, "u_MVPMat" );
+		progAlbedoVertCol.setFloatMatrix44(mainCamera.viewMat * mainCamera.projMat, "u_MVPMat" );
 		myMesh.render( progAlbedoVertCol.getAttribLocations() );
 
-		progAlbedoVertCol.setFloatMatrix44(myCamera.viewMat * myCamera.projMat, "u_MVPMat");
+		progAlbedoVertCol.setFloatMatrix44(mainCamera.viewMat * mainCamera.projMat, "u_MVPMat");
 		myMeshWorldGrid.render( progAlbedoVertCol.getAttribLocations() );
 
 		glUseProgram(0);

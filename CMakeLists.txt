@@ -115,8 +115,12 @@ ADD_SUBDIRECTORY( ./src_fw/applications/comp_particles )
 
 ADD_SUBDIRECTORY( ./src_fw/applications/compute_info )
 
-ADD_SUBDIRECTORY( ./src_fw/applications/flex_demo )
+#ADD_SUBDIRECTORY( ./src_fw/applications/flex_demo )
+#ADD_SUBDIRECTORY( ./src_fw/applications/physx_demo )
 
-#ADD_SUBDIRECTORY( ./src_fw/applications/gl_mesh_seq )
-#ADD_SUBDIRECTORY( ./src_fw/applications/gl_mesh_data )
-#ADD_SUBDIRECTORY( ./src_fw/applications/gl_volume_viz )
+ADD_SUBDIRECTORY( ./src_fw/applications/gl_mesh_seq )
+ADD_SUBDIRECTORY( ./src_fw/applications/gl_mesh_data )
+ADD_SUBDIRECTORY( ./src_fw/applications/gl_mesh_normal )
+
+ADD_SUBDIRECTORY( ./src_fw/applications/gl_light_spot )
+ADD_SUBDIRECTORY( ./src_fw/applications/gl_volume_viz )
